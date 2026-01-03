@@ -15,11 +15,14 @@ import MasterData from './components/MasterData';
 import Scheduler from './components/Scheduler';
 import AttendanceTracker from './components/AttendanceTracker';
 import { Location, Staff, Topic, Thirukkural, SharingConfig, PostponedDate, AttendanceRecord } from './types';
-import { GoogleGenerativeAI } from "@google/genai";
+import { GoogleGenerativeAI } from "@google/generative-ai";
 
 // Initialize the Gemini API
-const genAI = new GoogleGenerativeAI(import.meta.env.VITE_GEMINI_API_KEY);
+const API_KEY = (import.meta.env.VITE_GEMINI_API_KEY as string);
+
+const genAI = new GoogleGenerativeAI(API_KEY);
 const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
+
 const App: React.FC = () => {
   const [activeTab, setActiveTab] = useState<'dashboard' | 'master' | 'schedule' | 'attendance'>('dashboard');
   
