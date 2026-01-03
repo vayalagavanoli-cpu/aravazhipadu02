@@ -1,4 +1,4 @@
-alert("Debug - Variable Found: " + (import.meta.env.VITE_GEMINI_API_KEY ? "YES" : "NO"));
+
 import React, { useState, useRef, useMemo, useEffect } from 'react';
 import { 
   Trash2, 
