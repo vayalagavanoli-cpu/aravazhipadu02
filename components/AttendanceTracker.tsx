@@ -172,8 +172,8 @@ const AttendanceTracker: React.FC<AttendanceTrackerProps> = ({ staff, locations,
 
     try {
       // Corrected Initialization using the official SDK names
-      const genAI = new GoogleGenerativeAI(apiKey);
-      const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
+      const genAI = new GoogleGenerativeAI(import.meta.env.VITE_GEMINI_API_KEY);
+const model = genAI.getGenerativeModel({ model: "gemini-3-flash" });
 
       const staffListString = workingStaff.map(s => `Name: ${s.name}, SystemID: ${s.id}, MeetID: ${s.meetId}`).join(" | ");
       
