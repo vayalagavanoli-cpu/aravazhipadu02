@@ -227,5 +227,5 @@ const DashboardCard: React.FC<{ title: string; count: number; icon: React.ReactN
     </div>
   </div>
 );
-
+};
 export default App;
