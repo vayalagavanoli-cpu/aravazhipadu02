@@ -22,7 +22,8 @@ import {
   X
 } from 'lucide-react';
 import * as XLSX from 'xlsx';
-import { GoogleGenerativeAI, SchemaType  } from "@google/generative-ai";
+import { GoogleGenerativeAI  } from "@google/generative-ai";
+import { Type } from "@google/genai";
 import { Staff, AttendanceRecord, Location, StaffCategory } from '../types';
 
 interface AttendanceTrackerProps {
@@ -164,7 +165,7 @@ const AttendanceTracker: React.FC<AttendanceTrackerProps> = ({ staff, locations,
 
     try {
       // Always initialize GoogleGenAI with { apiKey: process.env.API_KEY } directly before use.
-      const genAI = new GoogleGenerativeAI(import.meta.env.VITE_GEMINI_API_KEY || "");
+      const genAI = new GoogleGenerativeAI(import.meta.env.VITE_GEMINI_API_KEY);
       const model = genAI.getGenerativeModel({ model: "gemini-2.0-flash-lite" });
       const staffListString = workingStaff.map(s => `Name: ${s.name}, SystemID: ${s.id}, MeetID: ${s.meetId}`).join(" | ");
       const prompt = `You are a Google Meet Attendance Parser. 
@@ -177,35 +178,35 @@ const AttendanceTracker: React.FC<AttendanceTrackerProps> = ({ staff, locations,
       Format: [{"staffId": "ID", "unknownName": "Optional", "percentage": 85, "inTime": "HH:MM", "outTime": "HH:MM"}]
       DATA: ${textData}`;
 
-      const result = await model.generateContent({
-        
-        contents: [{ role: 'user', parts: [{ text: prompt }] }],
-        generationConfig: { 
+      const response = await ai.models.generateContent({
+        model: "gemini-3-flash-preview",
+        contents: prompt,
+        config: { 
           responseMimeType: "application/json",
           // Use responseSchema for robust JSON structure generation.
           responseSchema: {
-            type: SchemaType.ARRAY,
+            type: Type.ARRAY,
             items: {
-              type: SchemaType.OBJECT,
+              type: Type.OBJECT,
               properties: {
                 staffId: {
-                  type: SchemaType.STRING,
+                  type: Type.STRING,
                   description: "The SystemID of the staff from the master list, or 'UNKNOWN' if not found."
                 },
                 unknownName: {
-                  type: SchemaType.STRING,
+                  type: Type.STRING,
                   description: "The name from the CSV if staffId is 'UNKNOWN'."
                 },
                 percentage: {
-                  type: SchemaType.NUMBER,
+                  type: Type.NUMBER,
                   description: "Attendance percentage calculated from the meeting duration."
                 },
                 inTime: {
-                  type: SchemaType.STRING,
+                  type: Type.STRING,
                   description: "The approximate join time."
                 },
                 outTime: {
-                  type: SchemaType.STRING,
+                  type: Type.STRING,
                   description: "The approximate leave time."
                 }
               },
@@ -221,13 +222,11 @@ const AttendanceTracker: React.FC<AttendanceTrackerProps> = ({ staff, locations,
       setProcessingStatus('தரவுகளை ஒத்திசைக்கிறது...');
 
       // Access the generated text directly from the response.
-      const response = result.response;
-      const textResponse = await response.text(); 
-      const jsonStr = textResponse?.trim();
-
+      const jsonStr = response.text?.trim();
       if (!jsonStr) {
         throw new Error("AI returned an empty response");
-        }
+      }
+
       const matches = JSON.parse(jsonStr);
       
       const newRecordsFromAI: AttendanceRecord[] = matches.map((m: any) => ({

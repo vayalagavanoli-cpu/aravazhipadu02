@@ -1,7 +1,15 @@
+
 import React, { useState, useEffect } from 'react';
 import { 
-  Users, MapPin, BookOpen, BookText, CalendarRange, 
-  Clock, LayoutDashboard, FileSpreadsheet, UserCheck 
+  Users, 
+  MapPin, 
+  BookOpen, 
+  BookText, 
+  CalendarRange, 
+  Clock, 
+  LayoutDashboard,
+  FileSpreadsheet,
+  UserCheck
 } from 'lucide-react';
 import MasterData from './components/MasterData';
 import Scheduler from './components/Scheduler';
@@ -9,11 +17,12 @@ import AttendanceTracker from './components/AttendanceTracker';
 import { Location, Staff, Topic, Thirukkural, SharingConfig, PostponedDate, AttendanceRecord } from './types';
 import { GoogleGenerativeAI } from "@google/generative-ai";
 
-// Initialize the Gemini API safely
-const API_KEY = (import.meta.env.VITE_GEMINI_API_KEY as string) || "";
+
+// Initialize the Gemini API
+const API_KEY = (import.meta.env.VITE_GEMINI_API_KEY as string);
+
 const genAI = new GoogleGenerativeAI(API_KEY);
 const model = genAI.getGenerativeModel({ model: "gemini-2.0-flash-lite" });
-
 const syncToCloud = async (type: string, data: any) => {
   try {
     await fetch('/api/sync', {
@@ -29,7 +38,10 @@ const syncToCloud = async (type: string, data: any) => {
 const App: React.FC = () => {
   const [activeTab, setActiveTab] = useState<'dashboard' | 'master' | 'schedule' | 'attendance'>('dashboard');
   
-  // Initial states
+  const App: React.FC = () => {
+  const [activeTab, setActiveTab] = useState<'dashboard' | 'master' | 'schedule' | 'attendance'>('dashboard');
+  
+  // Set all initial states to empty arrays []
   const [locations, setLocations] = useState<Location[]>([]);
   const [staff, setStaff] = useState<Staff[]>([]);
   const [topics, setTopics] = useState<Topic[]>([]);
@@ -183,7 +195,6 @@ const App: React.FC = () => {
   );
 };
 
-// Helper Components
 const NavButton: React.FC<{ active: boolean; onClick: () => void; icon: React.ReactNode; label: string }> = ({ 
   active, onClick, icon, label 
 }) => (
@@ -216,5 +227,5 @@ const DashboardCard: React.FC<{ title: string; count: number; icon: React.ReactN
     </div>
   </div>
 );
-
+};
 export default App;
