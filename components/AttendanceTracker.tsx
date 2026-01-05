@@ -155,28 +155,18 @@ const AttendanceTracker: React.FC<AttendanceTrackerProps> = ({ staff, locations,
     setLocalRecords(existing);
   };
 
- const processWithAI = async (textData: string) => {
+  const processWithAI = async (textData: string) => {
     if (workingStaff.length === 0) {
       alert("முதலில் 'Master Data' பகுதியில் பணியாளர்களைச் சேர்க்கவும்.");
       setSyncLoading(false);
       return;
     }
-   
-    const apiKey = process.env.API_KEY;
-    
-    if (!apiKey) {
-      alert("Key Check: " + (apiKey ? "Found" : "Missing") + " | Value Length: " + (apiKey?.length || 0));
-      setSyncLoading(false);
-      return;
-    }
 
     try {
-      // Corrected Initialization using the official SDK names
+      // Always initialize GoogleGenAI with { apiKey: process.env.API_KEY } directly before use.
       const genAI = new GoogleGenerativeAI(import.meta.env.VITE_GEMINI_API_KEY);
       const model = genAI.getGenerativeModel({ model: "gemini-2.0-flash-lite" });
-
-      const staffListString = workingStaff.map(s => `Name: ${s.name}, SystemID: ${s.id}, MeetID: ${s.meetId}`).join(" | ");
-      
+        const staffListString = workingStaff.map(s => `Name: ${s.name}, SystemID: ${s.id}, MeetID: ${s.meetId}`).join(" | ");
       const prompt = `You are a Google Meet Attendance Parser. 
       Input: CSV content with Participant Name and duration info.
       Task: 
@@ -187,23 +177,56 @@ const AttendanceTracker: React.FC<AttendanceTrackerProps> = ({ staff, locations,
       Format: [{"staffId": "ID", "unknownName": "Optional", "percentage": 85, "inTime": "HH:MM", "outTime": "HH:MM"}]
       DATA: ${textData}`;
 
-      // Corrected API calling method
-      const result = await model.generateContent(prompt);
-      const response = await result.response;
-      const rawText = response.text();
+      const response = await ai.models.generateContent({
+        model: "gemini-3-flash-preview",
+        contents: prompt,
+        config: { 
+          responseMimeType: "application/json",
+          // Use responseSchema for robust JSON structure generation.
+          responseSchema: {
+            type: Type.ARRAY,
+            items: {
+              type: Type.OBJECT,
+              properties: {
+                staffId: {
+                  type: Type.STRING,
+                  description: "The SystemID of the staff from the master list, or 'UNKNOWN' if not found."
+                },
+                unknownName: {
+                  type: Type.STRING,
+                  description: "The name from the CSV if staffId is 'UNKNOWN'."
+                },
+                percentage: {
+                  type: Type.NUMBER,
+                  description: "Attendance percentage calculated from the meeting duration."
+                },
+                inTime: {
+                  type: Type.STRING,
+                  description: "The approximate join time."
+                },
+                outTime: {
+                  type: Type.STRING,
+                  description: "The approximate leave time."
+                }
+              },
+              required: ["staffId", "percentage"]
+            }
+          }
+        }
+      });
 
       if (isCancelledRef.current) return;
 
       setProcessingProgress(70);
       setProcessingStatus('தரவுகளை ஒத்திசைக்கிறது...');
 
-      if (!rawText) {
+      // Access the generated text directly from the response.
+      const jsonStr = response.text?.trim();
+      if (!jsonStr) {
         throw new Error("AI returned an empty response");
       }
 
-      // Start of "Rest of the processing logic"
-      // This part turns the AI's text into the actual attendance list
-      const matches = JSON.parse(rawText.replace(/```json|```/g, ""));
+      const matches = JSON.parse(jsonStr);
       
       const newRecordsFromAI: AttendanceRecord[] = matches.map((m: any) => ({
         id: Math.random().toString(36).substr(2, 9),

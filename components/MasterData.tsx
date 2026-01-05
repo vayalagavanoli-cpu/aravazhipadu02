@@ -1,5 +1,5 @@
 import React, { useState, useRef, useMemo } from 'react';
-import { Plus, Trash2, Download, Upload, Edit, Check, X, Search, Filter, MapPin, Tag, EyeOff, Eye, Keyboard, Languages, ListTree } from 'lucide-react';
+import { Plus, Trash2, Download, Upload, Edit, Check, X, Search, Filter, MapPin, Tag, EyeOff, Eye, Keyboard, Languages, ListTree, Users, BookOpen, BookText, Clock, AlertCircle } from 'lucide-react';
 import * as XLSX from 'xlsx';
 import { Location, Staff, Topic, Thirukkural, SharingConfig, PostponedDate, StaffCategory, StaffStatus } from '../types';
 
@@ -278,48 +278,70 @@ const LocationMaster: React.FC<MasterDataProps> = ({ locations, setLocations }) 
         <CSVActions fileName="locations" templateData={[{ name: "Chennai", excluded: "no" }]} onUpload={handleCSVUpload} />
       </div>
       
-      <div className="bg-slate-50 p-6 rounded-3xl border space-y-4">
-        <div className="flex gap-3 max-w-xl">
-          <TamilInput
-            value={name}
-            onChange={setName}
-            placeholder="இடத்தின் பெயர் (எ.கா. Chennai)"
-            className="flex-1 border rounded-2xl px-5 py-3 outline-none focus:ring-2 focus:ring-indigo-500"
-          />
-          <button onClick={save} className="bg-indigo-600 text-white px-6 rounded-2xl font-bold hover:bg-indigo-700 transition-colors">
-            {editingId ? <Check /> : <Plus />}
-          </button>
-        </div>
-        <div className="flex items-center gap-2">
-          <label className="flex items-center gap-2 cursor-pointer select-none">
-            <input 
-              type="checkbox" 
-              checked={excluded} 
-              onChange={e => setExcluded(e.target.checked)}
-              className="w-4 h-4 rounded border-slate-300 text-indigo-600 focus:ring-indigo-500"
+      <div className="bg-slate-50 p-6 rounded-3xl border border-slate-200 shadow-inner space-y-5">
+        <div className="flex flex-col md:flex-row gap-4">
+          <div className="flex-1 space-y-1">
+            <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1">இடத்தின் பெயர்</label>
+            <TamilInput
+              value={name}
+              onChange={setName}
+              placeholder="எ.கா. Trichy, Madurai..."
+              className="w-full border rounded-2xl px-5 py-3.5 text-lg font-bold outline-none focus:ring-4 focus:ring-indigo-500/10 transition-all bg-white"
             />
-            <span className="text-sm font-bold text-slate-600">அட்டவணையில் இருந்து விலக்கு (Exclude from Schedule)</span>
-          </label>
+          </div>
+          <div className="md:w-64 space-y-1">
+            <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1">பயன்பாட்டு முறை</label>
+            <div className="flex bg-white border rounded-2xl p-1 h-[58px]">
+              <button 
+                onClick={() => setExcluded(false)}
+                className={`flex-1 rounded-xl text-[11px] font-black transition-all ${!excluded ? 'bg-indigo-600 text-white shadow-sm' : 'text-slate-400 hover:bg-slate-50'}`}
+              >
+                அனைத்தும்
+              </button>
+              <button 
+                onClick={() => setExcluded(true)}
+                className={`flex-1 rounded-xl text-[11px] font-black transition-all ${excluded ? 'bg-orange-600 text-white shadow-sm' : 'text-slate-400 hover:bg-slate-50'}`}
+              >
+                வருகை மட்டும்
+              </button>
+            </div>
+          </div>
+          <div className="flex items-end">
+            <button onClick={save} className="h-[58px] bg-indigo-600 text-white px-8 rounded-2xl font-black hover:bg-indigo-700 transition-all shadow-xl shadow-indigo-100 active:scale-95">
+              {editingId ? "மாற்று" : "சேர்"}
+            </button>
+          </div>
+        </div>
+        
+        <div className="flex items-start gap-3 p-4 bg-indigo-50/50 rounded-2xl border border-indigo-100/50">
+          <AlertCircle className="text-indigo-600 mt-0.5 shrink-0" size={16} />
+          <p className="text-xs text-indigo-700 font-medium leading-relaxed">
+            <span className="font-black">வருகை மட்டும் (Attendance Only):</span> இந்த இடத்தைத் தேர்வு செய்தால், இது பகிர்வு (Sharing) மற்றும் அட்டவணையில் வராது. ஆனால் வருகைப்பதிவில் (Attendance) இந்த இடத்தைப் பயன்படுத்த முடியும்.
+          </p>
         </div>
       </div>
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
         {locations.map(l => (
-          <div key={l.id} className={`flex justify-between items-center p-4 bg-white rounded-2xl border transition-all ${l.excludedFromSchedule ? 'border-orange-200 bg-orange-50/30 opacity-75' : 'border-slate-100 hover:border-indigo-100'}`}>
-            <div className="flex flex-col">
-              <span className={`font-bold ${l.excludedFromSchedule ? 'text-slate-500' : 'text-slate-900'}`}>{l.name}</span>
-              {l.excludedFromSchedule && <span className="text-[10px] font-black text-orange-600 uppercase tracking-tighter">அட்டவணையில் இல்லை</span>}
+          <div key={l.id} className={`group flex justify-between items-center p-5 rounded-3xl border transition-all ${l.excludedFromSchedule ? 'border-orange-200 bg-orange-50/20 shadow-sm' : 'bg-white border-slate-100 hover:border-indigo-100 hover:shadow-lg'}`}>
+            <div className="flex flex-col gap-1.5">
+              <span className={`text-lg font-black ${l.excludedFromSchedule ? 'text-slate-500' : 'text-slate-900'}`}>{l.name}</span>
+              {l.excludedFromSchedule ? (
+                <span className="px-2 py-0.5 bg-orange-100 text-orange-700 text-[9px] font-black rounded-lg w-fit border border-orange-200 uppercase tracking-tighter">வருகைப்பதிவுக்கு மட்டும்</span>
+              ) : (
+                <span className="px-2 py-0.5 bg-emerald-100 text-emerald-700 text-[9px] font-black rounded-lg w-fit border border-emerald-200 uppercase tracking-tighter">அட்டவணையில் உண்டு</span>
+              )}
             </div>
-            <div className="flex gap-2">
+            <div className="flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
               <button 
                 onClick={() => toggleExcluded(l.id)} 
-                title={l.excludedFromSchedule ? "அட்டவணையில் சேர்" : "அட்டவணையில் இருந்து விலக்கு"}
-                className={`p-1.5 rounded-lg transition-colors ${l.excludedFromSchedule ? 'text-orange-400 hover:bg-orange-100' : 'text-slate-400 hover:text-emerald-600 hover:bg-emerald-50'}`}
+                title={l.excludedFromSchedule ? "அட்டவணையில் சேர்" : "வருகைப்பதிவுக்கு மட்டும் மாற்று"}
+                className={`p-2 rounded-xl transition-all ${l.excludedFromSchedule ? 'text-orange-500 bg-orange-50' : 'text-slate-400 hover:text-emerald-600 hover:bg-emerald-50'}`}
               >
-                {l.excludedFromSchedule ? <EyeOff size={16}/> : <Eye size={16}/>}
+                {l.excludedFromSchedule ? <EyeOff size={18}/> : <Eye size={18}/>}
               </button>
-              <button onClick={() => startEdit(l)} className="p-1.5 rounded-lg text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 transition-colors"><Edit size={16}/></button>
-              <button onClick={() => setLocations(locations.filter(loc => loc.id !== l.id))} className="p-1.5 rounded-lg text-slate-400 hover:text-red-500 hover:bg-red-50 transition-colors"><Trash2 size={16}/></button>
+              <button onClick={() => startEdit(l)} className="p-2 rounded-xl text-slate-400 hover:text-indigo-600 hover:bg-indigo-50"><Edit size={18}/></button>
+              <button onClick={() => setLocations(locations.filter(loc => loc.id !== l.id))} className="p-2 rounded-xl text-slate-400 hover:text-red-500 hover:bg-red-50"><Trash2 size={18}/></button>
             </div>
           </div>
         ))}
@@ -402,7 +424,6 @@ const StaffMaster: React.FC<MasterDataProps> = ({ staff, setStaff, locations }) 
       return null;
     };
 
-    const errors: string[] = [];
     const processedStaff: Staff[] = [];
 
     data.forEach((row, index) => {
@@ -413,16 +434,10 @@ const StaffMaster: React.FC<MasterDataProps> = ({ staff, setStaff, locations }) 
       const rawStatus = getRowValue(row, ['status', 'நிலை']);
       const rawAdditional = getRowValue(row, ['additional_locations', 'other_locations', 'கூடுதல்_இடம்']);
 
-      if (!rawName || !rawLoc) {
-        errors.push(`வரிசை ${index + 1}: தரவு முழுமையற்றது.`);
-        return;
-      }
+      if (!rawName || !rawLoc) return;
 
       const loc = locations.find(l => normalize(l.name) === normalize(rawLoc));
-      if (!loc) {
-        errors.push(`வரிசை ${index + 1} (${rawName}): இடம் '${rawLoc}' Master Data-வில் இல்லை.`);
-        return;
-      }
+      if (!loc) return;
 
       const additionalLocs: string[] = [];
       if (rawAdditional) {
@@ -482,7 +497,7 @@ const StaffMaster: React.FC<MasterDataProps> = ({ staff, setStaff, locations }) 
       </div>
       
       <div className="bg-slate-50 p-6 rounded-3xl border space-y-4 shadow-inner">
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           <div className="space-y-1">
             <label className="text-xs font-bold text-slate-500">பெயர்</label>
             <TamilInput 
@@ -493,10 +508,14 @@ const StaffMaster: React.FC<MasterDataProps> = ({ staff, setStaff, locations }) 
             />
           </div>
           <div className="space-y-1">
-            <label className="text-xs font-bold text-slate-500">முதன்மை இடம்</label>
-            <select value={form.locationId} onChange={e => setForm({...form, locationId: e.target.value})} className="w-full border rounded-xl px-4 py-2 outline-none focus:ring-2 focus:ring-indigo-500 bg-white">
+            <label className="text-xs font-bold text-slate-500">முதன்மை இடம் (Primary Location)</label>
+            <select value={form.locationId} onChange={e => setForm({...form, locationId: e.target.value})} className="w-full border rounded-xl px-4 py-2 outline-none focus:ring-2 focus:ring-indigo-500 bg-white font-bold">
               <option value="">தேர்ந்தெடுக்கவும்</option>
-              {locations.map(l => <option key={l.id} value={l.id}>{l.name}</option>)}
+              {locations.map(l => (
+                <option key={l.id} value={l.id}>
+                  {l.name} {l.excludedFromSchedule ? '(வருகை மட்டும்)' : ''}
+                </option>
+              ))}
             </select>
           </div>
           <div className="space-y-1">
@@ -505,6 +524,9 @@ const StaffMaster: React.FC<MasterDataProps> = ({ staff, setStaff, locations }) 
               {Object.values(StaffCategory).map(c => <option key={c} value={c}>{c}</option>)}
             </select>
           </div>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           <div className="space-y-1">
             <label className="text-xs font-bold text-slate-500">நிலை (Status)</label>
             <select value={form.status} onChange={e => setForm({...form, status: e.target.value as StaffStatus})} className="w-full border rounded-xl px-4 py-2 outline-none focus:ring-2 focus:ring-indigo-500 bg-white">
@@ -513,35 +535,81 @@ const StaffMaster: React.FC<MasterDataProps> = ({ staff, setStaff, locations }) 
               <option value="Long Leave">விடுமுறை</option>
             </select>
           </div>
+          <div className="space-y-1 md:col-span-2">
+            <label className="text-xs font-bold text-slate-500">Meet ID (Email)</label>
+            <input type="text" value={form.meetId} onChange={e => setForm({...form, meetId: e.target.value})} placeholder="example@gmail.com" className="w-full border rounded-xl px-4 py-2 outline-none focus:ring-2 focus:ring-indigo-500" />
+          </div>
         </div>
-        <div className="flex gap-4">
-          <input type="text" value={form.meetId} onChange={e => setForm({...form, meetId: e.target.value})} placeholder="Meet ID (Email)" className="flex-1 border rounded-xl px-4 py-2 outline-none focus:ring-2 focus:ring-indigo-500" />
-          <button onClick={save} className="bg-indigo-600 text-white rounded-xl font-bold px-8 py-2 hover:bg-indigo-700 transition-all shadow-md active:scale-95">
-            {editingId ? "புதுப்பிக்கவும்" : "சேர்க்கவும்"}
-          </button>
+
+        <div className="space-y-2 p-4 bg-white rounded-2xl border border-slate-200 shadow-sm">
+          <label className="text-xs font-black text-indigo-600 uppercase tracking-widest flex items-center gap-2">
+            <MapPin size={14} /> கூடுதல் பொறுப்பு இடங்கள் (Additional Responsibility Locations)
+          </label>
+          <div className="max-h-32 overflow-y-auto grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-2 no-scrollbar p-1">
+            {locations.filter(l => l.id !== form.locationId).map(l => (
+              <label 
+                key={l.id} 
+                className={`flex items-center gap-2 px-3 py-2 rounded-xl border cursor-pointer transition-all text-[11px] font-bold ${
+                  form.additionalLocationIds.includes(l.id) 
+                    ? 'bg-indigo-600 text-white border-indigo-600 shadow-sm' 
+                    : 'bg-slate-50 text-slate-500 hover:border-indigo-300'
+                }`}
+              >
+                <input 
+                  type="checkbox" 
+                  className="hidden" 
+                  checked={form.additionalLocationIds.includes(l.id)} 
+                  onChange={() => toggleAdditionalLoc(l.id)} 
+                />
+                {l.name}
+              </label>
+            ))}
+          </div>
         </div>
+
+        <button onClick={save} className="w-full bg-indigo-600 text-white rounded-2xl font-black py-3 hover:bg-indigo-700 transition-all shadow-lg shadow-indigo-100 active:scale-[0.98]">
+          {editingId ? "பணியாளர் விபரங்களை புதுப்பிக்கவும்" : "புதிய பணியாளரை சேர்க்கவும்"}
+        </button>
       </div>
 
-      <div className="overflow-x-auto rounded-3xl border shadow-sm">
-        <table className="w-full text-left text-sm">
+      <div className="overflow-x-auto rounded-3xl border shadow-sm bg-white">
+        <table className="w-full text-left text-sm border-collapse">
           <thead className="bg-slate-50 border-b">
             <tr>
               <th className="p-4 font-black uppercase text-[10px] text-slate-500">பெயர்</th>
-              <th className="p-4 font-black uppercase text-[10px] text-slate-500">இடம்</th>
+              <th className="p-4 font-black uppercase text-[10px] text-slate-500">இடம் (Primary & Additional)</th>
               <th className="p-4 font-black uppercase text-[10px] text-slate-500">பிரிவு</th>
               <th className="p-4 text-right font-black uppercase text-[10px] text-slate-500">செயல்கள்</th>
             </tr>
           </thead>
-          <tbody className="divide-y bg-white">
+          <tbody className="divide-y divide-slate-100">
             {filteredStaff.map(s => (
-              <tr key={s.id} className="hover:bg-slate-50 transition-colors">
-                <td className="p-4 font-bold">{s.name}</td>
-                <td className="p-4">{locations.find(l => l.id === s.locationId)?.name}</td>
-                <td className="p-4 text-xs">{s.category}</td>
+              <tr key={s.id} className="hover:bg-slate-50/50 transition-colors">
+                <td className="p-4">
+                  <div className="font-black text-slate-900">{s.name}</div>
+                  <div className="text-[10px] text-slate-400 font-mono">{s.meetId}</div>
+                </td>
+                <td className="p-4">
+                  <div className="flex flex-wrap gap-1.5">
+                    <span className="px-2 py-0.5 bg-indigo-50 text-indigo-600 rounded text-[10px] font-black border border-indigo-100">
+                      {locations.find(l => l.id === s.locationId)?.name}
+                    </span>
+                    {(s.additionalLocationIds || []).map(id => (
+                      <span key={id} className="px-2 py-0.5 bg-slate-50 text-slate-400 rounded text-[10px] font-bold border border-slate-100" title="கூடுதல் பொறுப்பு">
+                        {locations.find(l => l.id === id)?.name}
+                      </span>
+                    ))}
+                  </div>
+                </td>
+                <td className="p-4">
+                  <span className={`text-[10px] font-black px-2 py-0.5 rounded uppercase ${s.status === 'Working' ? 'bg-emerald-50 text-emerald-600' : 'bg-red-50 text-red-600'}`}>
+                    {s.category}
+                  </span>
+                </td>
                 <td className="p-4 text-right">
-                  <div className="flex justify-end gap-3">
-                    <button onClick={() => startEdit(s)} className="text-slate-400 hover:text-indigo-600"><Edit size={16}/></button>
-                    <button onClick={() => setStaff(staff.filter(st => st.id !== s.id))} className="text-slate-400 hover:text-red-500"><Trash2 size={16}/></button>
+                  <div className="flex justify-end gap-2">
+                    <button onClick={() => startEdit(s)} className="p-2 text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-lg transition-colors"><Edit size={16}/></button>
+                    <button onClick={() => setStaff(staff.filter(st => st.id !== s.id))} className="p-2 text-slate-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors"><Trash2 size={16}/></button>
                   </div>
                 </td>
               </tr>
@@ -637,7 +705,7 @@ const ThirukkuralMaster: React.FC<MasterDataProps> = ({ thirukkurals, setThirukk
       
       if (!rowVerse) return;
 
-      let foundTopicId = topicId; // Default to selected topic if any
+      let foundTopicId = topicId;
       if (rowTopic) {
         const topicObj = topics.find(t => normalize(t.name) === normalize(rowTopic));
         if (topicObj) foundTopicId = topicObj.id;
@@ -699,6 +767,8 @@ const ThirukkuralMaster: React.FC<MasterDataProps> = ({ thirukkurals, setThirukk
 const SharingMaster: React.FC<MasterDataProps> = ({ sharingConfigs, setSharingConfigs, locations }) => {
   const [day, setDay] = useState(ENGLISH_DAYS[0]);
   const [selectedLocations, setSelectedLocations] = useState<string[]>([]);
+  
+  // Explicitly exclude locations marked as 'excludedFromSchedule' from being selectable
   const activeLocations = useMemo(() => locations.filter(l => !l.excludedFromSchedule), [locations]);
 
   const save = () => {
@@ -718,28 +788,52 @@ const SharingMaster: React.FC<MasterDataProps> = ({ sharingConfigs, setSharingCo
     <div className="space-y-6">
       <div className="border-b pb-6">
         <h3 className="text-2xl font-black">1.5 பகிர்வு இடங்கள் (Sharing Config)</h3>
+        <p className="text-[10px] text-slate-400 font-bold mt-1 uppercase tracking-widest">Selected locations will rotate in the schedule.</p>
       </div>
       <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
         <div className="space-y-6 bg-slate-50 p-6 rounded-3xl border shadow-inner">
-          <select value={day} onChange={e => setDay(e.target.value)} className="w-full border rounded-2xl px-5 py-3 outline-none focus:ring-2 focus:ring-indigo-500 bg-white font-bold">
-            {ENGLISH_DAYS.map((d, i) => <option key={d} value={d}>{TAMIL_DAYS[i]}</option>)}
-          </select>
-          <div className="grid grid-cols-2 gap-2 h-52 overflow-y-auto p-4 border rounded-2xl bg-white no-scrollbar">
-            {activeLocations.map(l => (
-              <label key={l.id} className={`p-2.5 text-[11px] rounded-xl cursor-pointer flex items-center gap-2 border ${selectedLocations.includes(l.id) ? 'bg-indigo-600 text-white font-bold' : 'bg-slate-50'}`}>
-                <input type="checkbox" className="w-4 h-4 rounded" checked={selectedLocations.includes(l.id)} onChange={() => setSelectedLocations(prev => prev.includes(l.id) ? prev.filter(x => x !== l.id) : [...prev, l.id])} /> {l.name}
-              </label>
-            ))}
+          <div className="space-y-1">
+             <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1">கிழமை</label>
+             <select value={day} onChange={e => setDay(e.target.value)} className="w-full border rounded-2xl px-5 py-3 outline-none focus:ring-2 focus:ring-indigo-500 bg-white font-bold">
+               {ENGLISH_DAYS.map((d, i) => <option key={d} value={d}>{TAMIL_DAYS[i]}</option>)}
+             </select>
           </div>
-          <button onClick={save} className="w-full bg-indigo-600 text-white py-4 rounded-2xl font-bold">சேமிக்கவும்</button>
+          <div className="space-y-1">
+            <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1">இடங்கள் தேர்வு</label>
+            <div className="grid grid-cols-2 gap-2 h-52 overflow-y-auto p-4 border rounded-2xl bg-white no-scrollbar">
+              {activeLocations.map(l => (
+                <label key={l.id} className={`p-2.5 text-[11px] rounded-xl cursor-pointer flex items-center gap-2 border transition-all ${selectedLocations.includes(l.id) ? 'bg-indigo-600 text-white font-bold border-indigo-600 shadow-sm' : 'bg-slate-50 text-slate-600 hover:border-indigo-300'}`}>
+                  <input type="checkbox" className="hidden" checked={selectedLocations.includes(l.id)} onChange={() => setSelectedLocations(prev => prev.includes(l.id) ? prev.filter(x => x !== l.id) : [...prev, l.id])} /> {l.name}
+                </label>
+              ))}
+              {activeLocations.length === 0 && <div className="col-span-2 flex flex-col items-center justify-center h-full text-slate-300 text-xs font-bold gap-2"><MapPin size={24} /> இடங்கள் எதுவும் இல்லை</div>}
+            </div>
+          </div>
+          <button onClick={save} className="w-full bg-indigo-600 text-white py-4 rounded-2xl font-black hover:bg-indigo-700 transition-all shadow-lg shadow-indigo-100 active:scale-95">விதிமுறை சேமிக்கவும்</button>
         </div>
         <div className="space-y-4">
+          <h4 className="text-xs font-black text-slate-400 uppercase tracking-widest">தற்போதைய விதிமுறைகள்</h4>
           {sharingConfigs.map(config => (
-            <div key={config.day} className="flex justify-between items-center p-5 bg-white border rounded-2xl shadow-sm">
-              <span className="font-bold">{TAMIL_DAYS[ENGLISH_DAYS.indexOf(config.day)]}</span>
-              <button onClick={() => setSharingConfigs(sharingConfigs.filter(c => c.day !== config.day))} className="text-slate-400 hover:text-red-500"><Trash2 size={16}/></button>
+            <div key={config.day} className="flex justify-between items-center p-5 bg-white border border-slate-100 rounded-3xl shadow-sm hover:border-indigo-100 transition-all">
+              <div className="flex flex-col gap-1">
+                <span className="font-black text-slate-900">{TAMIL_DAYS[ENGLISH_DAYS.indexOf(config.day)]}</span>
+                <span className="text-[10px] font-bold text-slate-400">{config.locationIds.length} இடங்கள் இணைக்கப்பட்டுள்ளன</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <button 
+                  onClick={() => {
+                    setDay(config.day);
+                    setSelectedLocations(config.locationIds);
+                  }}
+                  className="p-2 text-slate-400 hover:text-indigo-600 transition-colors"
+                >
+                  <Edit size={16} />
+                </button>
+                <button onClick={() => setSharingConfigs(sharingConfigs.filter(c => c.day !== config.day))} className="p-2 text-slate-400 hover:text-red-500 transition-colors"><Trash2 size={16}/></button>
+              </div>
             </div>
           ))}
+          {sharingConfigs.length === 0 && <div className="p-12 text-center text-slate-300 font-bold border-2 border-dashed rounded-3xl">விதிமுறைகள் எதுவும் இல்லை</div>}
         </div>
       </div>
     </div>
@@ -763,15 +857,21 @@ const PostponeMaster: React.FC<MasterDataProps> = ({ postponedDates, setPostpone
       </div>
       <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
         <div className="space-y-4 bg-slate-50 p-6 rounded-3xl border">
-          <input type="date" value={orig} onChange={e => setOrig(e.target.value)} className="w-full border rounded-2xl px-5 py-3 outline-none" />
-          <input type="date" value={newD} onChange={e => setNewD(e.target.value)} className="w-full border rounded-2xl px-5 py-3 outline-none" />
-          <button onClick={save} className="w-full bg-indigo-600 text-white py-4 rounded-2xl font-bold">சேர்க்கவும்</button>
+          <div className="space-y-1">
+            <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">இருந்த தேதி</label>
+            <input type="date" value={orig} onChange={e => setOrig(e.target.value)} className="w-full border rounded-2xl px-5 py-3 outline-none focus:ring-2 focus:ring-indigo-500 bg-white" />
+          </div>
+          <div className="space-y-1">
+            <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest">மாற்றிய தேதி</label>
+            <input type="date" value={newD} onChange={e => setNewD(e.target.value)} className="w-full border rounded-2xl px-5 py-3 outline-none focus:ring-2 focus:ring-indigo-500 bg-white" />
+          </div>
+          <button onClick={save} className="w-full bg-indigo-600 text-white py-4 rounded-2xl font-black mt-2">ஒத்திவைக்க</button>
         </div>
         <div className="space-y-3">
           {postponedDates.map((p, idx) => (
-            <div key={idx} className="flex justify-between items-center p-4 bg-white border rounded-2xl">
-              <span className="text-xs font-mono">{p.originalDate} → {p.newDate}</span>
-              <button onClick={() => setPostponedDates(postponedDates.filter((_, i) => i !== idx))} className="text-red-400"><Trash2 size={16}/></button>
+            <div key={idx} className="flex justify-between items-center p-4 bg-white border rounded-2xl shadow-sm">
+              <span className="text-xs font-mono font-bold text-slate-600">{p.originalDate} → {p.newDate}</span>
+              <button onClick={() => setPostponedDates(postponedDates.filter((_, i) => i !== idx))} className="text-red-400 hover:text-red-600 p-2"><Trash2 size={16}/></button>
             </div>
           ))}
         </div>

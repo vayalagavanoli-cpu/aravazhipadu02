@@ -1,17 +1,17 @@
-import { defineConfig, loadEnv } from 'vite';
+
+import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
 
-export default defineConfig(({ mode }) => {
-  // Load environment variables from .env files
-  const env = loadEnv(mode, process.cwd(), '');
-  
-  // Identify the API key from various potential sources (VITE_ prefix or direct)
+// https://vitejs.dev/config/
+export default defineConfig(() => {
+  // Obtain the API key exclusively from the process.env.API_KEY environment variable.
+  // We use type casting to avoid potential 'Process' type definition errors in certain environments.
   const apiKey = env.VITE_GEMINI_API_KEY || process.env.VITE_GEMINI_API_KEY || env.API_KEY || process.env.API_KEY || '';
   
   return {
     plugins: [react()],
     define: {
-      // This globally replaces process.env.API_KEY with the actual key string during build
+      // Globally replaces process.env.API_KEY in the frontend code with the value from the build environment.
       'process.env.API_KEY': JSON.stringify(apiKey)
     },
     build: {
@@ -22,7 +22,7 @@ export default defineConfig(({ mode }) => {
         output: {
           manualChunks: {
             'vendor': ['react', 'react-dom'],
-            'genai': ['@google/generative-ai'],
+            'genai': ['@google/genai'],
             'utils': ['xlsx', 'lucide-react']
           }
         }

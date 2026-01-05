@@ -17,66 +17,39 @@ import AttendanceTracker from './components/AttendanceTracker';
 import { Location, Staff, Topic, Thirukkural, SharingConfig, PostponedDate, AttendanceRecord } from './types';
 import { GoogleGenerativeAI } from "@google/generative-ai";
 
+
 // Initialize the Gemini API
 const API_KEY = (import.meta.env.VITE_GEMINI_API_KEY as string);
 
 const genAI = new GoogleGenerativeAI(API_KEY);
 const model = genAI.getGenerativeModel({ model: "gemini-2.0-flash-lite" });
+const syncToCloud = async (type: string, data: any) => {
+  try {
+    await fetch('/api/sync', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ type, data })
+    });
+  } catch (error) {
+    console.error(`Failed to sync ${type} to cloud:`, error);
+  }
+};
 
 const App: React.FC = () => {
   const [activeTab, setActiveTab] = useState<'dashboard' | 'master' | 'schedule' | 'attendance'>('dashboard');
   
-  const [locations, setLocations] = useState<Location[]>(() => {
-    const saved = localStorage.getItem('locations');
-    return saved ? JSON.parse(saved) : [];
-  });
+  const App: React.FC = () => {
+  const [activeTab, setActiveTab] = useState<'dashboard' | 'master' | 'schedule' | 'attendance'>('dashboard');
   
-  const [staff, setStaff] = useState<Staff[]>(() => {
-    const saved = localStorage.getItem('staff');
-    return saved ? JSON.parse(saved) : [];
-  });
-  
-  const [topics, setTopics] = useState<Topic[]>(() => {
-    const saved = localStorage.getItem('topics');
-    return saved ? JSON.parse(saved) : [];
-  });
-  
-  const [thirukkurals, setThirukkurals] = useState<Thirukkural[]>(() => {
-    const saved = localStorage.getItem('thirukkurals');
-    return saved ? JSON.parse(saved) : [];
-  });
-  
-  const [sharingConfigs, setSharingConfigs] = useState<SharingConfig[]>(() => {
-    const saved = localStorage.getItem('sharingConfigs');
-    return saved ? JSON.parse(saved) : [];
-  });
-
-  const [postponedDates, setPostponedDates] = useState<PostponedDate[]>(() => {
-    const saved = localStorage.getItem('postponedDates');
-    return saved ? JSON.parse(saved) : [];
-  });
-
-  const [attendanceRecords, setAttendanceRecords] = useState<AttendanceRecord[]>(() => {
-    const saved = localStorage.getItem('attendanceRecords');
-    return saved ? JSON.parse(saved) : [];
-  });
-
-  // Store leave days as Record<"YYYY-MM", number[]>
-  const [globalLeaveDays, setGlobalLeaveDays] = useState<Record<string, number[]>>(() => {
-    const saved = localStorage.getItem('globalLeaveDays');
-    return saved ? JSON.parse(saved) : {};
-  });
-
-  useEffect(() => {
-    localStorage.setItem('locations', JSON.stringify(locations));
-    localStorage.setItem('staff', JSON.stringify(staff));
-    localStorage.setItem('topics', JSON.stringify(topics));
-    localStorage.setItem('thirukkurals', JSON.stringify(thirukkurals));
-    localStorage.setItem('sharingConfigs', JSON.stringify(sharingConfigs));
-    localStorage.setItem('postponedDates', JSON.stringify(postponedDates));
-    localStorage.setItem('globalLeaveDays', JSON.stringify(globalLeaveDays));
-    localStorage.setItem('attendanceRecords', JSON.stringify(attendanceRecords));
-  }, [locations, staff, topics, thirukkurals, sharingConfigs, postponedDates, globalLeaveDays, attendanceRecords]);
+  // Set all initial states to empty arrays []
+  const [locations, setLocations] = useState<Location[]>([]);
+  const [staff, setStaff] = useState<Staff[]>([]);
+  const [topics, setTopics] = useState<Topic[]>([]);
+  const [thirukkurals, setThirukkurals] = useState<Thirukkural[]>([]);
+  const [sharingConfigs, setSharingConfigs] = useState<SharingConfig[]>([]);
+  const [postponedDates, setPostponedDates] = useState<PostponedDate[]>([]);
+  const [attendanceRecords, setAttendanceRecords] = useState<AttendanceRecord[]>([]);
+  const [globalLeaveDays, setGlobalLeaveDays] = useState<Record<string, number[]>>({});
 
   return (
     <div className="min-h-screen bg-slate-50 text-slate-900">
