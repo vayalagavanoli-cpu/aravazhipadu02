@@ -61,7 +61,7 @@ export const onRequest: PagesFunction<Env> = async (context: EventContext<Env, a
     data.meetLink || '', 
     data.inTime || '', 
     data.outTime || '', 
-    data.percentage, 
+    data.percentage || 0, 
     data.unknownName || null // Handle undefined unknownName
   ).run();
 }
@@ -71,7 +71,7 @@ export const onRequest: PagesFunction<Env> = async (context: EventContext<Env, a
     "INSERT OR REPLACE INTO locations (id, name, excludedFromSchedule) VALUES (?, ?, ?)"
   ).bind(
     data.id, 
-    data.name, 
+    data.name || 'Unknown Location', 
    excluded
   ).run();
 }
