@@ -1,12 +1,13 @@
 
-import { PagesFunction, EventContext } from "@cloudflare/workers-types";
+//import { PagesFunction, EventContext } from "@cloudflare/workers-types";
 
+import { PagesFunction, Response as CFResponse, Headers as CFHeaders } from "@cloudflare/workers-types";
 interface Env {
   DB: D1Database;
 }
 
 // Ensure the type is PagesFunction<Env>
-export const onRequest: PagesFunction<Env> = async (context: EventContext<Env, any, any>) => {
+export const onRequest: PagesFunction<Env> = async (context) => {
   const { request, env } = context;
 
   // --- 1. GET Request: Fetch all data from Database ---
@@ -23,14 +24,14 @@ export const onRequest: PagesFunction<Env> = async (context: EventContext<Env, a
     ]);
 
     return new Response(JSON.stringify({
-      locations: data[0].results,
-      staff: data[1].results,
-      topics: data[2].results,
-      thirukkurals: data[3].results,
-      attendance_records: data[4].results,
-      postponed_dates: data[5].results,
-      sharing_configs: data[6].results,
-    }), { headers: { "Content-Type": "application/json" } });
+      locations: data[0].results || [],
+      staff: data[1].results || [],
+      topics: data[2].results || [],
+      thirukkurals: data[3].results || [],
+      attendance_records: data[4].results || [],
+      postponed_dates: data[5].results || [],
+      sharing_configs: data[6].results || [],
+    }), { headers: { "Content-Type": "application/json" } as any });
     } catch (e: any) {
       return new Response(JSON.stringify({ error: e.message }), { status: 500 });
     }
@@ -87,11 +88,11 @@ export const onRequest: PagesFunction<Env> = async (context: EventContext<Env, a
       }
       // You can add leave_days and other types here...
 
-      return new Response("Success", { status: 200 });
+      return new CFResponse("Success", { status: 200 });
     } catch (e: any) {
 
         console.error("Database Error:", e.message);
-       return new Response(JSON.stringify({ error: e.message }), { 
+       return new CFResponse(JSON.stringify({ error: e.message }), { 
         status: 500,
         headers: { "Content-Type": "application/json" } 
       });
@@ -99,5 +100,5 @@ export const onRequest: PagesFunction<Env> = async (context: EventContext<Env, a
     }
   }
 
-  return new Response("Method Not Allowed", { status: 405 });
+  return new CFResponse("Method Not Allowed", { status: 405 });
 };
