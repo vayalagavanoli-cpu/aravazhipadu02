@@ -1,5 +1,5 @@
 
-import { PagesFunction, Response } from "@cloudflare/workers-types";
+import { PagesFunction} from "@cloudflare/workers-types";
 interface Env {
   DB: D1Database; 
 }
