@@ -1,10 +1,12 @@
 
-import { PagesFunction} from "@cloudflare/workers-types";
+import { PagesFunction, EventContext } from "@cloudflare/workers-types";
+
 interface Env {
-  DB: D1Database; 
+  DB: D1Database;
 }
 
-export const onRequest: PagesFunction<Env> = async (context) => {
+// Ensure the type is PagesFunction<Env>
+export const onRequest: PagesFunction<Env> = async (context: EventContext<Env, any, any>) => {
   const { request, env } = context;
 
   // --- 1. GET Request: Fetch all data from Database ---
@@ -38,7 +40,11 @@ export const onRequest: PagesFunction<Env> = async (context) => {
   if (request.method === "POST") {
     try {
 
-      const { type, data } = await request.json() as any;
+    const body = await request.json() as any;
+      const { type, data } = body;
+
+      // Log the data to Cloudflare Real-time logs so you can see it
+      console.log(`Syncing ${type}:`, data);
 
       if (type === 'staff') {
         await env.DB.prepare(
@@ -83,7 +89,13 @@ export const onRequest: PagesFunction<Env> = async (context) => {
 
       return new Response("Success", { status: 200 });
     } catch (e: any) {
-      return new Response(JSON.stringify({ error: e.message }), { status: 500 });
+
+        console.error("Database Error:", e.message);
+       return new Response(JSON.stringify({ error: e.message }), { 
+        status: 500,
+        headers: { "Content-Type": "application/json" } 
+      });
+        
     }
   }
 
