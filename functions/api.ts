@@ -37,6 +37,7 @@ export const onRequest: PagesFunction<Env> = async (context) => {
   // --- 2. POST Request: Save data to Database ---
   if (request.method === "POST") {
     try {
+
       const { type, data } = await request.json() as any;
 
       if (type === 'staff') {
@@ -59,12 +60,13 @@ export const onRequest: PagesFunction<Env> = async (context) => {
   ).run();
 }
       else if (type === 'locations') {
-  await env.DB.prepare(
+  const excluded=data.excludedFromSchedule ? 1 : 0 // Convert true/false to 1/0
+        await env.DB.prepare(
     "INSERT OR REPLACE INTO locations (id, name, excludedFromSchedule) VALUES (?, ?, ?)"
   ).bind(
     data.id, 
     data.name, 
-    data.excludedFromSchedule ? 1 : 0 // Convert true/false to 1/0
+   excluded
   ).run();
 }
       else if (type === 'topics') {
