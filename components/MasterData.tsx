@@ -3,6 +3,7 @@ import { Plus, Trash2, Download, Upload, Edit, Check, X, Search, Filter, MapPin,
 import * as XLSX from 'xlsx';
 import { Location, Staff, Topic, Thirukkural, SharingConfig, PostponedDate, StaffCategory, StaffStatus } from '../types';
 
+
 interface MasterDataProps {
   locations: Location[];
   setLocations: React.Dispatch<React.SetStateAction<Location[]>>;
@@ -16,6 +17,9 @@ interface MasterDataProps {
   setSharingConfigs: React.Dispatch<React.SetStateAction<SharingConfig[]>>;
   postponedDates: PostponedDate[];
   setPostponedDates: React.Dispatch<React.SetStateAction<PostponedDate[]>>;
+  
+  // This line tells TypeScript that onSync is allowed
+  onSync: (type: string, data: any) => Promise<void>; 
 }
 
 const TAMIL_DAYS = ['திங்கள்', 'செவ்வாய்', 'புதன்', 'வியாழன்', 'வெள்ளி', 'சனி'];
@@ -41,7 +45,7 @@ const useTamilTransliteration = () => {
       const response = await fetch(
         `https://inputtools.google.com/request?text=${encodeURIComponent(text)}&itc=ta-t-i0-und&num=1&cp=0&cs=1&ie=utf-8&oe=utf-8&app=test`
       );
-      const data = await response.json();
+      const data = await response.json() as any;
       if (data[0] === 'SUCCESS') {
         return data[1][0][1][0] || text;
       }
@@ -124,10 +128,11 @@ const TamilInput: React.FC<{
 };
 
 const MasterData: React.FC<MasterDataProps> = (props) => {
+  const {onSync}=props;
   const [activeSubTab, setActiveSubTab] = useState('locations');
 
   const renderContent = () => {
-    switch (activeSubTab) {
+      switch (activeSubTab) {
       case 'locations': return <LocationMaster {...props} />;
       case 'staff': return <StaffMaster {...props} />;
       case 'topics': return <TopicMaster {...props} />;
@@ -135,7 +140,8 @@ const MasterData: React.FC<MasterDataProps> = (props) => {
       case 'sharing': return <SharingMaster {...props} />;
       case 'postpone': return <PostponeMaster {...props} />;
       default: return null;
-    }
+          }
+          
   };
 
   const tabs = [
@@ -230,7 +236,7 @@ const CSVActions: React.FC<{
   );
 };
 
-const LocationMaster: React.FC<MasterDataProps> = ({ locations, setLocations }) => {
+const LocationMaster: React.FC<MasterDataProps> = ({ locations, setLocations, onSync }) => {
   const [name, setName] = useState('');
   const [excluded, setExcluded] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
@@ -238,10 +244,17 @@ const LocationMaster: React.FC<MasterDataProps> = ({ locations, setLocations }) 
   const save = () => {
     if (!name) return;
     if (editingId) {
-      setLocations(locations.map(l => l.id === editingId ? { ...l, name: name.trim(), excludedFromSchedule: excluded } : l));
+      const updatedList =locations.map((l => l.id === editingId ? { ...l, name: name.trim(), excludedFromSchedule: excluded } : l));
+
+      setLocations(updatedList);
+      onSync('location',updatedList);
       setEditingId(null);
+            
     } else {
-      setLocations([...locations, { id: Date.now().toString(), name: name.trim(), excludedFromSchedule: excluded }]);
+      const newLocation={id: Date.now().toString(), name: name.trim(), excludedFromSchedule: excluded };
+      const updatedList =[...locations, newLocation];
+      setLocations(updatedList)
+      onSync('locations', updatedList);
     }
     setName('');
     setExcluded(false);
@@ -255,6 +268,7 @@ const LocationMaster: React.FC<MasterDataProps> = ({ locations, setLocations }) 
 
   const toggleExcluded = (id: string) => {
     setLocations(locations.map(l => l.id === id ? { ...l, excludedFromSchedule: !l.excludedFromSchedule } : l));
+    onSync('locations', locations);
   };
 
   const handleCSVUpload = (data: any[]) => {
@@ -264,6 +278,7 @@ const LocationMaster: React.FC<MasterDataProps> = ({ locations, setLocations }) 
       excludedFromSchedule: row.excluded === 'yes' || row.excluded === 'true' || !!row.excludedFromSchedule
     }));
     setLocations(prev => [...prev, ...newLocs]);
+    onSync('locations', locations);
   };
 
   return (
@@ -350,7 +365,7 @@ const LocationMaster: React.FC<MasterDataProps> = ({ locations, setLocations }) 
   );
 };
 
-const StaffMaster: React.FC<MasterDataProps> = ({ staff, setStaff, locations }) => {
+const StaffMaster: React.FC<MasterDataProps> = ({ staff, setStaff, locations, onSync }) => {
   const [form, setForm] = useState<{
     name: string;
     locationId: string;
@@ -386,8 +401,10 @@ const StaffMaster: React.FC<MasterDataProps> = ({ staff, setStaff, locations }) 
     if (editingId) {
       setStaff(staff.map(s => s.id === editingId ? { ...s, ...form } : s));
       setEditingId(null);
+      onSync('staff', staff);
     } else {
       setStaff([...staff, { ...form, id: Date.now().toString() }]);
+
     }
     setForm({ 
       name: '', 
@@ -467,6 +484,7 @@ const StaffMaster: React.FC<MasterDataProps> = ({ staff, setStaff, locations }) 
 
     if (processedStaff.length > 0) {
       setStaff(prev => [...prev, ...processedStaff]);
+      onSync('staff', staff);
       alert(`${processedStaff.length} பணியாளர்கள் சேர்க்கப்பட்டனர்.`);
     }
   };
@@ -621,7 +639,7 @@ const StaffMaster: React.FC<MasterDataProps> = ({ staff, setStaff, locations }) 
   );
 };
 
-const TopicMaster: React.FC<MasterDataProps> = ({ topics, setTopics }) => {
+const TopicMaster: React.FC<MasterDataProps> = ({ topics, setTopics, onSync }) => {
   const [name, setName] = useState('');
   const [editingId, setEditingId] = useState<string | null>(null);
 
@@ -630,8 +648,10 @@ const TopicMaster: React.FC<MasterDataProps> = ({ topics, setTopics }) => {
     if (editingId) {
       setTopics(topics.map(t => t.id === editingId ? { ...t, name: name.trim() } : t));
       setEditingId(null);
+      onSync('topics', topics);
     } else {
       setTopics([...topics, { id: Date.now().toString(), name: name.trim() }]);
+      onSync('topics', topics);
     }
     setName('');
   };
@@ -647,6 +667,7 @@ const TopicMaster: React.FC<MasterDataProps> = ({ topics, setTopics }) => {
       name: String(row.name || row.topic || row.தலைப்பு).trim()
     }));
     setTopics(prev => [...prev, ...newTopics]);
+    onSync('topics', topics);
   };
 
   return (
@@ -679,7 +700,7 @@ const TopicMaster: React.FC<MasterDataProps> = ({ topics, setTopics }) => {
   );
 };
 
-const ThirukkuralMaster: React.FC<MasterDataProps> = ({ thirukkurals, setThirukkurals, topics }) => {
+const ThirukkuralMaster: React.FC<MasterDataProps> = ({ thirukkurals, setThirukkurals, topics, onSync }) => {
   const [topicId, setTopicId] = useState('');
   const [verse, setVerse] = useState('');
   const [editingId, setEditingId] = useState<string | null>(null);
@@ -689,8 +710,10 @@ const ThirukkuralMaster: React.FC<MasterDataProps> = ({ thirukkurals, setThirukk
     if (editingId) {
       setThirukkurals(thirukkurals.map(k => k.id === editingId ? { ...k, topicId, verse: verse.trim() } : k));
       setEditingId(null);
+      onSync('thirukurals', thirukkurals);
     } else {
       setThirukkurals([...thirukkurals, { id: Date.now().toString(), topicId, verse: verse.trim() }]);
+      onSync('thirukurals', thirukkurals);
     }
     setVerse('');
   };
@@ -721,6 +744,7 @@ const ThirukkuralMaster: React.FC<MasterDataProps> = ({ thirukkurals, setThirukk
     });
 
     setThirukkurals(prev => [...prev, ...newKurals]);
+    onSync('thirukurals', thirukkurals);
   };
 
   return (
@@ -764,7 +788,7 @@ const ThirukkuralMaster: React.FC<MasterDataProps> = ({ thirukkurals, setThirukk
   );
 };
 
-const SharingMaster: React.FC<MasterDataProps> = ({ sharingConfigs, setSharingConfigs, locations }) => {
+const SharingMaster: React.FC<MasterDataProps> = ({ sharingConfigs, setSharingConfigs, locations, onSync }) => {
   const [day, setDay] = useState(ENGLISH_DAYS[0]);
   const [selectedLocations, setSelectedLocations] = useState<string[]>([]);
   
@@ -778,10 +802,13 @@ const SharingMaster: React.FC<MasterDataProps> = ({ sharingConfigs, setSharingCo
       const updated = [...sharingConfigs];
       updated[existingIndex] = { day, locationIds: selectedLocations };
       setSharingConfigs(updated);
+      onSync('sharingConfigs', sharingConfigs);
     } else {
       setSharingConfigs([...sharingConfigs, { day, locationIds: selectedLocations }]);
+      onSync('sharingConfigs', sharingConfigs);
     }
     setSelectedLocations([]);
+    onSync('sharingConfigs', sharingConfigs);
   };
 
   return (
@@ -840,13 +867,14 @@ const SharingMaster: React.FC<MasterDataProps> = ({ sharingConfigs, setSharingCo
   );
 };
 
-const PostponeMaster: React.FC<MasterDataProps> = ({ postponedDates, setPostponedDates }) => {
+const PostponeMaster: React.FC<MasterDataProps> = ({ postponedDates, setPostponedDates, onSync }) => {
   const [orig, setOrig] = useState('');
   const [newD, setNewD] = useState('');
 
   const save = () => {
     if (!orig || !newD) return;
     setPostponedDates([...postponedDates, { originalDate: orig, newDate: newD }]);
+    onSync('postponeddates', postponedDates);
     setOrig(''); setNewD('');
   };
 

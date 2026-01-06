@@ -16,7 +16,7 @@ const model = genAI.getGenerativeModel({ model: "gemini-2.0-flash-lite" });
 
 const syncToCloud = async (type: string, data: any) => {
   try {
-    await fetch('/api/sync', {
+    await fetch('/api', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ type, data })
@@ -39,6 +39,41 @@ const App: React.FC = () => {
   const [attendanceRecords, setAttendanceRecords] = useState<AttendanceRecord[]>([]);
   const [globalLeaveDays, setGlobalLeaveDays] = useState<Record<string, number[]>>({});
 
+ useEffect(() => {
+  const loadInitialData = async () => {
+    try {
+      const response = await fetch('/api');
+      const result = await response.json() as any;
+      
+      
+      if (result.locations) setLocations(result.locations);
+      if (result.staff) setStaff(result.staff);
+      if (result.topics) setTopics(result.topics);
+      if (result.thirukkurals) setThirukkurals(result.thirukkurals);
+      if (result.attendance_records) setAttendanceRecords(result.attendance_records);
+      if (result.postponed_dates) setPostponedDates(result.postponed_dates);
+      if (result.sharing_configs) setSharingConfigs(result.sharing_configs);
+    } catch (error) {
+      console.error("Failed to load data:", error);
+    }
+  };
+
+  loadInitialData();
+}, []);
+
+const syncToCloud = async (type: string, data: any) => {
+  try {
+    // Note: Use '/api' because that is where your function is mapped
+    await fetch('/api', { 
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ type, data })
+    });
+  } catch (error) {
+    console.error(`Failed to sync ${type}:`, error);
+  }
+};
+  
   return (
     <div className="min-h-screen bg-slate-50 text-slate-900">
       <header className="sticky top-0 z-50 bg-white/80 backdrop-blur-md border-b border-slate-200">
@@ -141,17 +176,23 @@ const App: React.FC = () => {
         )}
 
         {activeTab === 'master' && (
-          <div className="animate-in slide-in-from-bottom-4 duration-500">
-            <MasterData 
-              locations={locations} setLocations={setLocations}
-              staff={staff} setStaff={setStaff}
-              topics={topics} setTopics={setTopics}
-              thirukkurals={thirukkurals} setThirukkurals={setThirukkurals}
-              sharingConfigs={sharingConfigs} setSharingConfigs={setSharingConfigs}
-              postponedDates={postponedDates} setPostponedDates={setPostponedDates}
-            />
-          </div>
-        )}
+  <MasterData 
+    locations={locations}
+    setLocations={setLocations}
+    staff={staff}
+    setStaff={setStaff}
+    topics={topics}
+    setTopics={setTopics}
+    thirukkurals={thirukkurals}
+    setThirukkurals={setThirukkurals}
+    sharingConfigs={sharingConfigs}
+    setSharingConfigs={setSharingConfigs}
+    postponedDates={postponedDates}
+    setPostponedDates={setPostponedDates}
+  
+    onSync={syncToCloud} 
+  />
+)}
 
         {activeTab === 'schedule' && (
           <div className="animate-in slide-in-from-bottom-4 duration-500">
@@ -164,6 +205,7 @@ const App: React.FC = () => {
               postponedDates={postponedDates}
               globalLeaveDays={globalLeaveDays}
               setGlobalLeaveDays={setGlobalLeaveDays}
+              onSync={syncToCloud} 
             />
           </div>
         )}
@@ -175,6 +217,7 @@ const App: React.FC = () => {
               locations={locations}
               records={attendanceRecords}
               setRecords={setAttendanceRecords}
+              onSync={syncToCloud} 
             />
           </div>
         )}

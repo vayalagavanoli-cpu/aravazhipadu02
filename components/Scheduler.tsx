@@ -13,6 +13,7 @@ interface SchedulerProps {
   postponedDates: PostponedDate[];
   globalLeaveDays: Record<string, number[]>;
   setGlobalLeaveDays: React.Dispatch<React.SetStateAction<Record<string, number[]>>>;
+  onSync: (type: string, data: any) => Promise<void>;
 }
 
 const ENGLISH_DAYS = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
@@ -27,7 +28,9 @@ const formatDateForDisplay = (dateStr: string) => {
 
 const Scheduler: React.FC<SchedulerProps> = ({ 
   locations, staff, topics, thirukkurals, sharingConfigs, postponedDates,
-  globalLeaveDays, setGlobalLeaveDays 
+  globalLeaveDays, setGlobalLeaveDays,
+  onSync 
+  
 }) => {
   const [month, setMonth] = useState(new Date().getMonth());
   const [year, setYear] = useState(new Date().getFullYear());
@@ -37,6 +40,7 @@ const Scheduler: React.FC<SchedulerProps> = ({
   const currentMonthLeaveDays = globalLeaveDays[monthKey] || [];
 
   const toggleLeave = (day: number) => {
+    const key = '${year}-${month}';
     setIsGenerated(false);
     setGlobalLeaveDays(prev => {
       const existing = prev[monthKey] || [];
@@ -44,7 +48,9 @@ const Scheduler: React.FC<SchedulerProps> = ({
         ? existing.filter(d => d !== day) 
         : [...existing, day];
       return { ...prev, [monthKey]: updated };
+      onSync('leave_days',{dateKey: key, days: updated});
     });
+    
   };
 
   const handleMonthYearChange = (newMonth: number, newYear: number) => {

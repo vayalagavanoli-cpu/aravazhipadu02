@@ -30,6 +30,8 @@ interface AttendanceTrackerProps {
   locations: Location[]; 
   records: AttendanceRecord[];
   setRecords: React.Dispatch<React.SetStateAction<AttendanceRecord[]>>;
+
+ onSync: (type: string, data: any) => Promise<void>;
 }
 
 const TAMIL_MONTHS = ['ஜனவரி', 'பிப்ரவரி', 'மார்ச்', 'ஏப்ரல்', 'மே', 'ஜூன்', 'ஜூலை', 'ஆகஸ்ட்', 'செப்டம்பர்', 'அக்டோபர்', 'நவம்பர்', 'டிசம்பர்'];
@@ -41,7 +43,7 @@ const formatDate = (dateStr: string) => {
   return `${d}-${m}-${y}`;
 };
 
-const AttendanceTracker: React.FC<AttendanceTrackerProps> = ({ staff, locations, records, setRecords }) => {
+const AttendanceTracker: React.FC<AttendanceTrackerProps> = ({ staff, locations, records, setRecords,onSync }) => {
   const [syncLoading, setSyncLoading] = useState(false);
   const [processingProgress, setProcessingProgress] = useState(0);
   const [processingStatus, setProcessingStatus] = useState('');
@@ -96,15 +98,29 @@ const AttendanceTracker: React.FC<AttendanceTrackerProps> = ({ staff, locations,
     setHasUnsavedChanges(true);
   };
 
-  const handleSaveToGlobal = () => {
+  const handleSaveToGlobal = async() => {
     setRecords(prev => {
       const filtered = prev.filter(r => r.date !== selectedDate);
       return [...filtered, ...localRecords];
     });
-    setHasUnsavedChanges(false);
-    alert("வருகைப்பதிவு வெற்றிகரமாக சேமிக்கப்பட்டது!");
-  };
+   
 
+    setHasUnsavedChanges(false);
+
+    // ADD THIS: Sync each record to the D1 Database
+  try {
+    const syncPromises = localRecords.map(record => onSync('attendance', record));
+    await Promise.all(syncPromises);
+    alert("வருகைப்பதிவு வெற்றிகரமாக சேமிக்கப்பட்டது!");
+  } catch (error) {
+    console.error("Sync failed:", error);
+    alert("டேட்டாபேஸில் சேமிப்பதில் பிழை ஏற்பட்டது.");
+  }
+};
+
+   
+
+  
   const handleCSVUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
