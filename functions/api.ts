@@ -1,5 +1,5 @@
 
-import { PagesFunction } from "@cloudflare/workers-types";
+import { PagesFunction, Response } from "@cloudflare/workers-types";
 interface Env {
   DB: D1Database; 
 }
@@ -21,7 +21,7 @@ export const onRequest: PagesFunction<Env> = async (context) => {
         env.DB.prepare("SELECT * FROM sharing_configs").all(),
       ]);
 
-      return new CFResponse(JSON.stringify({
+      return new Response(JSON.stringify({
         locations: data[0].results,
         staff: data[1].results,
         topics: data[2].results,
@@ -31,7 +31,7 @@ export const onRequest: PagesFunction<Env> = async (context) => {
         sharing_configs: data[6].results,
       }), { headers: { "Content-Type": "application/json" } });
     } catch (e: any) {
-      return new CFResponse(JSON.stringify({ error: e.message }), { status: 500 });
+      return new Response(JSON.stringify({ error: e.message }), { status: 500 });
     }
   }
 
@@ -67,11 +67,11 @@ export const onRequest: PagesFunction<Env> = async (context) => {
       }
       // You can add leave_days and other types here...
 
-      return new CFResponse("Success", { status: 200 });
+      return new Response("Success", { status: 200 });
     } catch (e: any) {
-      return new CFResponse(JSON.stringify({ error: e.message }), { status: 500 });
+      return new Response(JSON.stringify({ error: e.message }), { status: 500 });
     }
   }
 
-  return new CFResponse("Method Not Allowed", { status: 405 });
+  return new Response("Method Not Allowed", { status: 405 });
 };
