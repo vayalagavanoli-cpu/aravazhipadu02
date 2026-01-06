@@ -1,7 +1,9 @@
 
 //import { PagesFunction, EventContext } from "@cloudflare/workers-types";
+//import { PagesFunction, Response as CFResponse, Headers as CFHeaders } from "@cloudflare/workers-types";
 
-import { PagesFunction, Response as CFResponse, Headers as CFHeaders } from "@cloudflare/workers-types";
+import { PagesFunction } from "@cloudflare/workers-types";
+
 interface Env {
   DB: D1Database;
 }
@@ -88,11 +90,11 @@ export const onRequest: PagesFunction<Env> = async (context) => {
       }
       // You can add leave_days and other types here...
 
-      return new CFResponse("Success", { status: 200 });
+      return new Response("Success", { status: 200 });
     } catch (e: any) {
 
         console.error("Database Error:", e.message);
-       return new CFResponse(JSON.stringify({ error: e.message }), { 
+       return new Response(JSON.stringify({ error: e.message }), { 
         status: 500,
         headers: { "Content-Type": "application/json" } 
       });
@@ -100,5 +102,5 @@ export const onRequest: PagesFunction<Env> = async (context) => {
     }
   }
 
-  return new CFResponse("Method Not Allowed", { status: 405 });
+  return new Response("Method Not Allowed", { status: 405 });
 };
