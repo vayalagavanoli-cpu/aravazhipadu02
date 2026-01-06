@@ -9,27 +9,26 @@ export const onRequest: PagesFunction<Env> = async (context) => {
 
   // --- 1. GET Request: Fetch all data from Database ---
   if (request.method === "GET") {
-    try {
-      const data = await Promise.all([
-        env.DB.prepare("SELECT * FROM locations").all(),
-        env.DB.prepare("SELECT id, name, excludedFromSchedule AS excludedFromSchedule FROM locations").all(),
-        env.DB.prepare("SELECT * FROM staff").all(),
-        env.DB.prepare("SELECT * FROM topics").all(),
-        env.DB.prepare("SELECT * FROM thirukkurals").all(),
-        env.DB.prepare("SELECT * FROM attendance_records").all(),
-        env.DB.prepare("SELECT * FROM postponed_dates").all(),
-        env.DB.prepare("SELECT * FROM sharing_configs").all(),
-      ]);
+  try {
+    const data = await Promise.all([
+      env.DB.prepare("SELECT * FROM locations").all(),
+      env.DB.prepare("SELECT * FROM staff").all(),
+      env.DB.prepare("SELECT * FROM topics").all(),
+      env.DB.prepare("SELECT * FROM thirukkurals").all(),
+      env.DB.prepare("SELECT * FROM attendance_records").all(),
+      env.DB.prepare("SELECT * FROM postponed_dates").all(),
+      env.DB.prepare("SELECT * FROM sharing_configs").all(),
+    ]);
 
-      return new Response(JSON.stringify({
-        locations: data[0].results,
-        staff: data[1].results,
-        topics: data[2].results,
-        thirukkurals: data[3].results,
-        attendance_records: data[4].results,
-        postponed_dates: data[5].results,
-        sharing_configs: data[6].results,
-      }), { headers: { "Content-Type": "application/json" } });
+    return new Response(JSON.stringify({
+      locations: data[0].results,
+      staff: data[1].results,
+      topics: data[2].results,
+      thirukkurals: data[3].results,
+      attendance_records: data[4].results,
+      postponed_dates: data[5].results,
+      sharing_configs: data[6].results,
+    }), { headers: { "Content-Type": "application/json" } });
     } catch (e: any) {
       return new Response(JSON.stringify({ error: e.message }), { status: 500 });
     }
@@ -46,15 +45,28 @@ export const onRequest: PagesFunction<Env> = async (context) => {
         ).bind(data.id, data.name, data.locationId, data.category, data.meetId, data.status).run();
       } 
       else if (type === 'attendance') {
-        await env.DB.prepare(
-          "INSERT INTO attendance_records (id, date, staffId, meetLink, inTime, outTime, percentage, unknownName) VALUES (?, ?, ?, ?, ?, ?, ?, ?)"
-        ).bind(data.id, data.date, data.staffId, data.meetLink, data.inTime, data.outTime, data.percentage, data.unknownName).run();
-      }
+  await env.DB.prepare(
+    "INSERT INTO attendance_records (id, date, staffId, meetLink, inTime, outTime, percentage, unknownName) VALUES (?, ?, ?, ?, ?, ?, ?, ?)"
+  ).bind(
+    data.id, 
+    data.date, 
+    data.staffId, 
+    data.meetLink || '', 
+    data.inTime || '', 
+    data.outTime || '', 
+    data.percentage, 
+    data.unknownName || null // Handle undefined unknownName
+  ).run();
+}
       else if (type === 'locations') {
-        await env.DB.prepare(
-          "INSERT OR REPLACE INTO locations (id, name, excludedFromSchedule) VALUES (?, ?, ?)"
-        ).bind(data.id, data.name, data.excludedFromSchedule).run();
-      }
+  await env.DB.prepare(
+    "INSERT OR REPLACE INTO locations (id, name, excludedFromSchedule) VALUES (?, ?, ?)"
+  ).bind(
+    data.id, 
+    data.name, 
+    data.excludedFromSchedule ? 1 : 0 // Convert true/false to 1/0
+  ).run();
+}
       else if (type === 'topics') {
         await env.DB.prepare(
           "INSERT OR REPLACE INTO topics (id, name) VALUES (?, ?)"
