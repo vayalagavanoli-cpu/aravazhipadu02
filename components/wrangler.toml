@@ -1,0 +1,7 @@
+name = "attendance-app"
+compatibility_date = "2024-12-01"
+
+[[d1_databases]]
+binding = "DB"
+database_name = "arab_db"
+database_id = "83b79fc2-7a67-43f5-b632-8b57c5cc72b6"
