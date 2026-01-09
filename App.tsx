@@ -9,6 +9,33 @@ import AttendanceTracker from './components/AttendanceTracker';
 import { Location, Staff, Topic, Thirukkural, SharingConfig, PostponedDate, AttendanceRecord } from './types';
 import { GoogleGenerativeAI } from "@google/generative-ai";
 
+
+const onSync = async (type: string, data: any) => {
+  try {
+    const res = await fetch("/api", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify({
+        type: type,
+        data: data
+      })
+    });
+
+    const result = await res.json();
+
+    if (!res.ok) {
+      console.error("API Error:", result);
+      alert("Failed to save data");
+    }
+  } catch (err) {
+    console.error("Network error:", err);
+    alert("Server error");
+  }
+};
+
+
 // Initialize the Gemini API safely
 const API_KEY = (import.meta.env.VITE_GEMINI_API_KEY as string) || "";
 const genAI = new GoogleGenerativeAI(API_KEY);
