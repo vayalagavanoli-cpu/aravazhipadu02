@@ -22,7 +22,7 @@ import {
   X
 } from 'lucide-react';
 import * as XLSX from 'xlsx';
-import { GoogleGenerativeAI, SchemaType  } from "@google/generative-ai";
+//import { GoogleGenerativeAI, SchemaType  } from "@google/generative-ai";
 import { Staff, AttendanceRecord, Location, StaffCategory } from '../types';
 
 interface AttendanceTrackerProps {
@@ -43,7 +43,7 @@ const formatDate = (dateStr: string) => {
   return `${d}-${m}-${y}`;
 };
 
-const AttendanceTracker: React.FC<AttendanceTrackerProps> = ({ staff, locations, records, setRecords,onSync }) => {
+const AttendanceTracker: React.FC<AttendanceTrackerProps> = ({ staff, locations, records, setRecords, onSync }) => {
   const [syncLoading, setSyncLoading] = useState(false);
   const [processingProgress, setProcessingProgress] = useState(0);
   const [processingStatus, setProcessingStatus] = useState('');
@@ -180,8 +180,8 @@ const AttendanceTracker: React.FC<AttendanceTrackerProps> = ({ staff, locations,
 
     try {
       // Always initialize GoogleGenAI with { apiKey: process.env.API_KEY } directly before use.
-      const genAI = new GoogleGenerativeAI(import.meta.env.VITE_GEMINI_API_KEY || "");
-      const model = genAI.getGenerativeModel({ model: "gemini-2.0-flash-lite" });
+     // const genAI = new GoogleGenerativeAI(import.meta.env.VITE_GEMINI_API_KEY || "");
+      //const model = genAI.getGenerativeModel({ model: "gemini-2.0-flash-lite" });
       const staffListString = workingStaff.map(s => `Name: ${s.name}, SystemID: ${s.id}, MeetID: ${s.meetId}`).join(" | ");
       const prompt = `You are a Google Meet Attendance Parser. 
       Input: CSV content with Participant Name and duration info.
@@ -193,43 +193,7 @@ const AttendanceTracker: React.FC<AttendanceTrackerProps> = ({ staff, locations,
       Format: [{"staffId": "ID", "unknownName": "Optional", "percentage": 85, "inTime": "HH:MM", "outTime": "HH:MM"}]
       DATA: ${textData}`;
 
-      const result = await model.generateContent({
-        
-        contents: [{ role: 'user', parts: [{ text: prompt }] }],
-        generationConfig: { 
-          responseMimeType: "application/json",
-          // Use responseSchema for robust JSON structure generation.
-          responseSchema: {
-            type: SchemaType.ARRAY,
-            items: {
-              type: SchemaType.OBJECT,
-              properties: {
-                staffId: {
-                  type: SchemaType.STRING,
-                  description: "The SystemID of the staff from the master list, or 'UNKNOWN' if not found."
-                },
-                unknownName: {
-                  type: SchemaType.STRING,
-                  description: "The name from the CSV if staffId is 'UNKNOWN'."
-                },
-                percentage: {
-                  type: SchemaType.NUMBER,
-                  description: "Attendance percentage calculated from the meeting duration."
-                },
-                inTime: {
-                  type: SchemaType.STRING,
-                  description: "The approximate join time."
-                },
-                outTime: {
-                  type: SchemaType.STRING,
-                  description: "The approximate leave time."
-                }
-              },
-              required: ["staffId", "percentage"]
-            }
-          }
-        }
-      });
+     
 
       if (isCancelledRef.current) return;
 
@@ -237,9 +201,9 @@ const AttendanceTracker: React.FC<AttendanceTrackerProps> = ({ staff, locations,
       setProcessingStatus('தரவுகளை ஒத்திசைக்கிறது...');
 
       // Access the generated text directly from the response.
-      const response = result.response;
-      const textResponse = await response.text(); 
-      const jsonStr = textResponse?.trim();
+const response = result.response;
+const textResponse = await response.text(); 
+ const jsonStr = textResponse?.trim();
 
       if (!jsonStr) {
         throw new Error("AI returned an empty response");
