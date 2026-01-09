@@ -68,14 +68,15 @@ export const onRequest: PagesFunction<Env> = async (context) => {
     data.unknownName || null // Handle undefined unknownName
   ).run();
 }
-      else if (type === 'locations') {
-  const excluded=data.excludedFromSchedule ? 1 : 0 // Convert true/false to 1/0
+      else if (type === "locations") {
+ // const excluded=data.excludedFromSchedule ? 1 : 0 // Convert true/false to 1/0
         await env.DB.prepare(
     "INSERT OR REPLACE INTO locations (id, name, excludedFromSchedule) VALUES (?, ?, ?)"
   ).bind(
     data.id, 
     data.name || 'Unknown Location', 
-   excluded
+   //excluded
+   data.excludedFromSchedule ? 1:0
   ).run();
 }
       else if (type === 'topics') {
@@ -90,17 +91,18 @@ export const onRequest: PagesFunction<Env> = async (context) => {
       }
       // You can add leave_days and other types here...
 
-      return new Response("Success", { status: 200 });
-    } catch (e: any) {
-
-        console.error("Database Error:", e.message);
-       return new Response(JSON.stringify({ error: e.message }), { 
-        status: 500,
-        headers: { "Content-Type": "application/json" } 
-      });
-        
-    }
+      return new Response(
+      JSON.stringify({ success: true }),
+      { headers: { "Content-Type": "application/json" } }
+    );
+  } catch (e: any) {
+    console.error("POST ERROR:", e.message);
+    return new Response(
+      JSON.stringify({ error: e.message }),
+      { status: 500 }
+    );
   }
+}
 
   return new Response("Method Not Allowed", { status: 405 });
 };
