@@ -486,8 +486,10 @@ const StaffMaster: React.FC<MasterDataProps> = ({ staff, setStaff, locations, on
     });
 
     if (processedStaff.length > 0) {
-      setStaff(prev => [...prev, ...processedStaff]);
-      onSync('staff', staff);
+      // மாற்றம்: புதிய லிஸ்ட்டை உருவாக்கிவிட்டு அனுப்புங்கள்
+      const updatedStaff = [...staff, ...processedStaff];
+      setStaff(updatedStaff);
+      onSync('staff', updatedStaff); // பழைய 'staff' அனுப்பக்கூடாது
       alert(`${processedStaff.length} பணியாளர்கள் சேர்க்கப்பட்டனர்.`);
     }
   };
