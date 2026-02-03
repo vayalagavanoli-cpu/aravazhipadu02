@@ -431,7 +431,7 @@ const StaffMaster: React.FC<MasterDataProps> = ({ staff, setStaff, locations, on
     });
   };
 
-  const handleCSVUpload = (data: any[]) => {
+ const handleCSVUpload = (data: any[]) => {
     if (data.length === 0) return;
     const normalize = (str: any) => String(str || '').toLowerCase().trim().replace(/[^\x20-\x7E\u0B80-\u0BFF]/g, '').replace(/[\s_]/g, '');
 
@@ -449,6 +449,8 @@ const StaffMaster: React.FC<MasterDataProps> = ({ staff, setStaff, locations, on
     data.forEach((row, index) => {
       const rawName = getRowValue(row, ['name', 'staffname', 'staff_name', 'பணியாளர்']);
       const rawLoc = getRowValue(row, ['location', 'location_name', 'place', 'இடம்']);
+      
+      // ... மற்ற ரீடிங் லாஜிக் பழையபடியே இருக்கட்டும் ... 
       const rawCategory = getRowValue(row, ['category', 'designation', 'role', 'பிரிவு']);
       const rawMeetId = getRowValue(row, ['meet_id', 'meetid', 'email', 'email_id']);
       const rawStatus = getRowValue(row, ['status', 'நிலை']);
@@ -457,7 +459,13 @@ const StaffMaster: React.FC<MasterDataProps> = ({ staff, setStaff, locations, on
       if (!rawName || !rawLoc) return;
 
       const loc = locations.find(l => normalize(l.name) === normalize(rawLoc));
-      if (!loc) return;
+      
+      // குறிப்பு: Location கிடைக்கவில்லை என்றால் Skip ஆகிவிடும். 
+      // ஸ்பெல்லிங் சரியாக உள்ளதா என சரிபார்க்கவும்.
+      if (!loc) {
+          console.warn(`Location not found for staff: ${rawName}, Location: ${rawLoc}`);
+          return;
+      }
 
       const additionalLocs: string[] = [];
       if (rawAdditional) {
@@ -470,15 +478,13 @@ const StaffMaster: React.FC<MasterDataProps> = ({ staff, setStaff, locations, on
 
       let finalCategory = StaffCategory.Permanent;
       const normalizedCat = normalize(rawCategory);
-      if (CATEGORY_MAP[normalizedCat]) {
-        finalCategory = CATEGORY_MAP[normalizedCat];
-      }
+      if (CATEGORY_MAP[normalizedCat]) finalCategory = CATEGORY_MAP[normalizedCat];
 
       processedStaff.push({
         id: Math.random().toString(36).substr(2, 9),
         name: String(rawName).trim(),
         locationId: loc.id,
-        additionalLocationIds: additionalLocs,
+        additionalLocationIds: additionalLocs, // இது undefined ஆக இருக்காது
         category: finalCategory,
         meetId: String(rawMeetId || '').trim(),
         status: (['working', 'notworking', 'longleave'].includes(normalize(rawStatus)) ? rawStatus : 'Working') as StaffStatus
@@ -486,11 +492,13 @@ const StaffMaster: React.FC<MasterDataProps> = ({ staff, setStaff, locations, on
     });
 
     if (processedStaff.length > 0) {
-      // மாற்றம்: புதிய லிஸ்ட்டை உருவாக்கிவிட்டு அனுப்புங்கள்
+      // இங்கேதான் மாற்றம்: புதிய லிஸ்ட்டை உருவாக்கி அனுப்புகிறோம்
       const updatedStaff = [...staff, ...processedStaff];
       setStaff(updatedStaff);
-      onSync('staff', updatedStaff); // பழைய 'staff' அனுப்பக்கூடாது
+      onSync('staff', updatedStaff); // பழைய 'staff'-ஐ அனுப்பாமல் 'updatedStaff'-ஐ அனுப்ப வேண்டும்
       alert(`${processedStaff.length} பணியாளர்கள் சேர்க்கப்பட்டனர்.`);
+    } else {
+        alert("எந்த பணியாளரும் சேர்க்கப்படவில்லை. CSV-ல் உள்ள இடங்களின் பெயர்கள் (Location Name) சரியாக உள்ளதா என சரிபார்க்கவும்.");
     }
   };
 
@@ -671,11 +679,13 @@ const TopicMaster: React.FC<MasterDataProps> = ({ topics, setTopics, onSync }) =
       id: Math.random().toString(36).substr(2, 9), 
       name: String(row.name || row.topic || row.தலைப்பு).trim()
     }));
-
-    // மாற்றம்
-    const updatedTopics = [...topics, ...newTopics];
-    setTopics(updatedTopics);
-    onSync('topics', updatedTopics);
+    
+    if (newTopics.length > 0) {
+        const updatedTopics = [...topics, ...newTopics];
+        setTopics(updatedTopics);
+        onSync('topics', updatedTopics); // பழைய 'topics'-ஐ அனுப்பக்கூடாது
+        alert("சிந்தனை தலைப்புகள் அப்டேட் செய்யப்பட்டன.");
+    }
   };
 
   return (
@@ -736,15 +746,32 @@ const ThirukkuralMaster: React.FC<MasterDataProps> = ({ thirukkurals, setThirukk
       
       if (!rowVerse) return;
 
-      let foundTopicId = topicId;
+      let foundTopicId = topicId; // Dropdown-ல் தேர்வு செய்த தலைப்பு
+      
+      // CSV-ல் தலைப்பு இருந்தால் அதைத் தேடு
       if (rowTopic) {
         const topicObj = topics.find(t => normalize(t.name) === normalize(rowTopic));
         if (topicObj) foundTopicId = topicObj.id;
       }
 
-      const updatedKurals = [...thirukkurals, ...newKurals];
-    setThirukkurals(updatedKurals);
-    onSync('thirukurals', updatedKurals);
+      if (foundTopicId) {
+        newKurals.push({
+          id: Math.random().toString(36).substr(2, 9),
+          topicId: foundTopicId,
+          verse: rowVerse
+        });
+      }
+    });
+
+    if (newKurals.length > 0) {
+        const updatedKurals = [...thirukkurals, ...newKurals];
+        setThirukkurals(updatedKurals);
+        // ஸ்பெல்லிங் முக்கியம்: 'thirukurals' (API-ல் உள்ளபடியே இருக்க வேண்டும்)
+        onSync('thirukurals', updatedKurals); 
+        alert("திருக்குறள்கள் அப்டேட் செய்யப்பட்டன.");
+    } else {
+        alert("திருக்குறள் சேர்க்கப்படவில்லை. சிந்தனைத் தலைப்பு (Topic) சரியாக உள்ளதா என பார்க்கவும்.");
+    }
   };
 
   return (

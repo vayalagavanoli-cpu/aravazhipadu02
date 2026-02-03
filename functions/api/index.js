@@ -1,7 +1,7 @@
-export async function onRequestGet(context) {
-  // தரவுகளைப் பெறுவதற்கு (App திறக்கும் போது)
-  const db = context.env.DB;
+// functions/api/index.js
 
+export async function onRequestGet(context) {
+  const db = context.env.DB;
   try {
     const locations = await db.prepare("SELECT * FROM locations").all();
     const staff = await db.prepare("SELECT * FROM staff").all();
@@ -11,7 +11,6 @@ export async function onRequestGet(context) {
     const sharing = await db.prepare("SELECT * FROM sharing_configs").all();
     const postponed = await db.prepare("SELECT * FROM postponed_dates").all();
 
-    // Staff additional locations & Sharing IDs JSON parse செய்ய வேண்டும்
     const formattedStaff = staff.results.map(s => ({
       ...s,
       additionalLocationIds: s.additionalLocationIds ? JSON.parse(s.additionalLocationIds) : []
@@ -24,7 +23,7 @@ export async function onRequestGet(context) {
 
     const formattedLocations = locations.results.map(l => ({
         ...l,
-        excludedFromSchedule: l.excludedFromSchedule === 1 // Convert 1 to true
+        excludedFromSchedule: l.excludedFromSchedule === 1
     }));
 
     return new Response(JSON.stringify({
@@ -43,27 +42,36 @@ export async function onRequestGet(context) {
 }
 
 export async function onRequestPost(context) {
-  // தரவுகளைச் சேமிப்பதற்கு (onSync)
   const db = context.env.DB;
   const { request } = context;
   const { type, data } = await request.json();
 
   try {
     if (type === 'locations') {
-      // Full Sync: பழையதை அழித்து புதியதைச் சேர்ப்பது
       await db.prepare("DELETE FROM locations").run();
       const stmt = db.prepare("INSERT INTO locations (id, name, excludedFromSchedule) VALUES (?, ?, ?)");
       const batch = data.map(l => stmt.bind(l.id, l.name, l.excludedFromSchedule ? 1 : 0));
       if (batch.length > 0) await db.batch(batch);
     } 
     
+    // Staff Update Logic
     else if (type === 'staff') {
       await db.prepare("DELETE FROM staff").run();
       const stmt = db.prepare("INSERT INTO staff (id, name, locationId, additionalLocationIds, category, meetId, status) VALUES (?, ?, ?, ?, ?, ?, ?)");
-      const batch = data.map(s => stmt.bind(s.id, s.name, s.locationId, JSON.stringify(s.additionalLocationIds), s.category, s.meetId, s.status));
+      // மாற்றம்: additionalLocationIds காலியாக இருந்தால் [] என எடுத்துக்கொள்ளவும்
+      const batch = data.map(s => stmt.bind(
+        s.id, 
+        s.name, 
+        s.locationId, 
+        JSON.stringify(s.additionalLocationIds || []), 
+        s.category, 
+        s.meetId, 
+        s.status
+      ));
       if (batch.length > 0) await db.batch(batch);
     }
 
+    // Topics Update Logic
     else if (type === 'topics') {
       await db.prepare("DELETE FROM topics").run();
       const stmt = db.prepare("INSERT INTO topics (id, name) VALUES (?, ?)");
@@ -71,6 +79,8 @@ export async function onRequestPost(context) {
       if (batch.length > 0) await db.batch(batch);
     }
 
+    // Thirukkurals Update Logic
+    // குறிப்பு: Frontend-ல் 'thirukurals' என்று அனுப்பினால், இங்கும் அதையே பயன்படுத்த வேண்டும்.
     else if (type === 'thirukurals') {
       await db.prepare("DELETE FROM thirukkurals").run();
       const stmt = db.prepare("INSERT INTO thirukkurals (id, topicId, verse) VALUES (?, ?, ?)");
@@ -93,7 +103,6 @@ export async function onRequestPost(context) {
     }
 
     else if (type === 'attendance') {
-      // Attendance is sent one by one (Upsert)
       const stmt = db.prepare(`
         INSERT INTO attendance (id, date, staffId, unknownName, meetLink, inTime, outTime, percentage) 
         VALUES (?, ?, ?, ?, ?, ?, ?, ?)
