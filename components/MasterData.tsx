@@ -399,16 +399,32 @@ const StaffMaster: React.FC<MasterDataProps> = ({ staff, setStaff, locations, on
     });
   }, [staff, searchTerm, filterLoc, filterCat]);
 
+  // --- முக்கிய மாற்றம்: SAVE FUNCTION ---
   const save = () => {
-    if (!form.name || !form.locationId) return;
-    if (editingId) {
-      setStaff(staff.map(s => s.id === editingId ? { ...s, ...form } : s));
-      setEditingId(null);
-      onSync('staff', staff);
-    } else {
-      setStaff([...staff, { ...form, id: Date.now().toString() }]);
-
+    if (!form.name || !form.locationId) {
+      alert("பெயர் மற்றும் முதன்மை இடம் அவசியம்.");
+      return;
     }
+
+    let updatedStaffList: Staff[];
+
+    if (editingId) {
+      // எடிட் செய்யும் போது
+      updatedStaffList = staff.map(s => s.id === editingId ? { ...s, ...form } : s);
+      setEditingId(null);
+    } else {
+      // புதிதாக சேர்க்கும் போது
+      const newStaff = { ...form, id: Date.now().toString() };
+      updatedStaffList = [...staff, newStaff];
+    }
+
+    // 1. UI-ஐ அப்டேட் செய்
+    setStaff(updatedStaffList);
+    
+    // 2. Database-ஐ அப்டேட் செய் (சரியான புதிய லிஸ்ட்டை அனுப்ப வேண்டும்)
+    onSync('staff', updatedStaffList);
+
+    // ஃபார்மை ரீசெட் செய்
     setForm({ 
       name: '', 
       locationId: '', 
@@ -431,7 +447,8 @@ const StaffMaster: React.FC<MasterDataProps> = ({ staff, setStaff, locations, on
     });
   };
 
- const handleCSVUpload = (data: any[]) => {
+  // --- முக்கிய மாற்றம்: CSV UPLOAD FUNCTION ---
+  const handleCSVUpload = (data: any[]) => {
     if (data.length === 0) return;
     const normalize = (str: any) => String(str || '').toLowerCase().trim().replace(/[^\x20-\x7E\u0B80-\u0BFF]/g, '').replace(/[\s_]/g, '');
 
@@ -446,11 +463,9 @@ const StaffMaster: React.FC<MasterDataProps> = ({ staff, setStaff, locations, on
 
     const processedStaff: Staff[] = [];
 
-    data.forEach((row, index) => {
+    data.forEach((row) => {
       const rawName = getRowValue(row, ['name', 'staffname', 'staff_name', 'பணியாளர்']);
       const rawLoc = getRowValue(row, ['location', 'location_name', 'place', 'இடம்']);
-      
-      // ... மற்ற ரீடிங் லாஜிக் பழையபடியே இருக்கட்டும் ... 
       const rawCategory = getRowValue(row, ['category', 'designation', 'role', 'பிரிவு']);
       const rawMeetId = getRowValue(row, ['meet_id', 'meetid', 'email', 'email_id']);
       const rawStatus = getRowValue(row, ['status', 'நிலை']);
@@ -460,10 +475,8 @@ const StaffMaster: React.FC<MasterDataProps> = ({ staff, setStaff, locations, on
 
       const loc = locations.find(l => normalize(l.name) === normalize(rawLoc));
       
-      // குறிப்பு: Location கிடைக்கவில்லை என்றால் Skip ஆகிவிடும். 
-      // ஸ்பெல்லிங் சரியாக உள்ளதா என சரிபார்க்கவும்.
       if (!loc) {
-          console.warn(`Location not found for staff: ${rawName}, Location: ${rawLoc}`);
+          console.warn(`Location not found: ${rawLoc}`);
           return;
       }
 
@@ -484,7 +497,7 @@ const StaffMaster: React.FC<MasterDataProps> = ({ staff, setStaff, locations, on
         id: Math.random().toString(36).substr(2, 9),
         name: String(rawName).trim(),
         locationId: loc.id,
-        additionalLocationIds: additionalLocs, // இது undefined ஆக இருக்காது
+        additionalLocationIds: additionalLocs,
         category: finalCategory,
         meetId: String(rawMeetId || '').trim(),
         status: (['working', 'notworking', 'longleave'].includes(normalize(rawStatus)) ? rawStatus : 'Working') as StaffStatus
@@ -492,13 +505,15 @@ const StaffMaster: React.FC<MasterDataProps> = ({ staff, setStaff, locations, on
     });
 
     if (processedStaff.length > 0) {
-      // இங்கேதான் மாற்றம்: புதிய லிஸ்ட்டை உருவாக்கி அனுப்புகிறோம்
+      // புதிய மற்றும் பழைய டேட்டாவை இணைத்து ஒரே லிஸ்டாக மாற்றுகிறோம்
       const updatedStaff = [...staff, ...processedStaff];
-      setStaff(updatedStaff);
-      onSync('staff', updatedStaff); // பழைய 'staff'-ஐ அனுப்பாமல் 'updatedStaff'-ஐ அனுப்ப வேண்டும்
+      
+      setStaff(updatedStaff); // திரையில் காட்ட
+      onSync('staff', updatedStaff); // டேட்டாபேஸிற்கு அனுப்ப (இதுதான் முக்கியம்!)
+      
       alert(`${processedStaff.length} பணியாளர்கள் சேர்க்கப்பட்டனர்.`);
     } else {
-        alert("எந்த பணியாளரும் சேர்க்கப்படவில்லை. CSV-ல் உள்ள இடங்களின் பெயர்கள் (Location Name) சரியாக உள்ளதா என சரிபார்க்கவும்.");
+      alert("CSV-ல் பணியாளர்கள் கண்டறியப்படவில்லை. Location பெயர்கள் சரியாக உள்ளதா என சரிபார்க்கவும்.");
     }
   };
 
