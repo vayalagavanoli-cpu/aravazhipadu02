@@ -671,8 +671,11 @@ const TopicMaster: React.FC<MasterDataProps> = ({ topics, setTopics, onSync }) =
       id: Math.random().toString(36).substr(2, 9), 
       name: String(row.name || row.topic || row.தலைப்பு).trim()
     }));
-    setTopics(prev => [...prev, ...newTopics]);
-    onSync('topics', topics);
+
+    // மாற்றம்
+    const updatedTopics = [...topics, ...newTopics];
+    setTopics(updatedTopics);
+    onSync('topics', updatedTopics);
   };
 
   return (
@@ -739,17 +742,9 @@ const ThirukkuralMaster: React.FC<MasterDataProps> = ({ thirukkurals, setThirukk
         if (topicObj) foundTopicId = topicObj.id;
       }
 
-      if (foundTopicId) {
-        newKurals.push({
-          id: Math.random().toString(36).substr(2, 9),
-          topicId: foundTopicId,
-          verse: rowVerse
-        });
-      }
-    });
-
-    setThirukkurals(prev => [...prev, ...newKurals]);
-    onSync('thirukurals', thirukkurals);
+      const updatedKurals = [...thirukkurals, ...newKurals];
+    setThirukkurals(updatedKurals);
+    onSync('thirukurals', updatedKurals);
   };
 
   return (
