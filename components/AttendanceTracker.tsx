@@ -98,25 +98,29 @@ const AttendanceTracker: React.FC<AttendanceTrackerProps> = ({ staff, locations,
     setHasUnsavedChanges(true);
   };
 
-  const handleSaveToGlobal = async() => {
+  const handleSaveToGlobal = async () => {
+    // 1. Local State Update (App-ல் காட்ட)
     setRecords(prev => {
       const filtered = prev.filter(r => r.date !== selectedDate);
       return [...filtered, ...localRecords];
     });
-   
 
     setHasUnsavedChanges(false);
 
-    // ADD THIS: Sync each record to the D1 Database
-  try {
-    const syncPromises = localRecords.map(record => onSync('attendance', record));
-    await Promise.all(syncPromises);
-    alert("வருகைப்பதிவு வெற்றிகரமாக சேமிக்கப்பட்டது!");
-  } catch (error) {
-    console.error("Sync failed:", error);
-    alert("டேட்டாபேஸில் சேமிப்பதில் பிழை ஏற்பட்டது.");
-  }
-};
+    // 2. Cloudflare Sync (மாற்றம்: மொத்தமாக ஒரே முறை அனுப்புதல்)
+    try {
+      // பழையது: await Promise.all(localRecords.map(r => onSync('attendance', r))); 
+      // தவறு: இது பல முறை அழைக்கும்.
+
+      // புதியது: ஒரே முறை அழைப்பது (Array ஆக அனுப்புதல்)
+      await onSync('attendance', localRecords);
+      
+      alert("வருகைப்பதிவு வெற்றிகரமாக சேமிக்கப்பட்டது!");
+    } catch (error) {
+      console.error("Sync failed:", error);
+      alert("டேட்டாபேஸில் சேமிப்பதில் பிழை ஏற்பட்டது.");
+    }
+  };
 
    
 

@@ -134,14 +134,31 @@ export async function onRequestPost(context) {
       }
     }
     else if (type === 'attendance') {
-      // மாற்றம்: டேபிள் பெயர் 'attendance_records' என மாற்றப்பட்டுள்ளது
+      // மாற்றம்: Bulk Insert Logic
       const stmt = db.prepare(`
         INSERT INTO attendance_records (id, date, staffId, unknownName, meetLink, inTime, outTime, percentage) 
         VALUES (?, ?, ?, ?, ?, ?, ?, ?)
         ON CONFLICT(id) DO UPDATE SET 
         percentage=excluded.percentage, inTime=excluded.inTime, outTime=excluded.outTime
       `);
-      await stmt.bind(data.id, data.date, data.staffId, data.unknownName, data.meetLink, data.inTime, data.outTime, data.percentage).run();
+
+      // பாதுகாப்பிற்காக 50 வரிகளாகப் பிரிக்கிறோம்
+      const chunks = chunkArray(data, BATCH_SIZE); 
+      
+      for (const chunk of chunks) {
+        const batch = chunk.map(r => stmt.bind(
+          r.id, 
+          r.date, 
+          r.staffId, 
+          r.unknownName, 
+          r.meetLink, 
+          r.inTime, 
+          r.outTime, 
+          r.percentage
+        ));
+        
+        if (batch.length > 0) await db.batch(batch);
+      }
     }
 
     return new Response(JSON.stringify({ success: true }), { headers: { "Content-Type": "application/json" } });
