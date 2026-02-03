@@ -277,8 +277,11 @@ const LocationMaster: React.FC<MasterDataProps> = ({ locations, setLocations, on
       name: String(row.name).trim(),
       excludedFromSchedule: row.excluded === 'yes' || row.excluded === 'true' || !!row.excludedFromSchedule
     }));
-    setLocations(prev => [...prev, ...newLocs]);
-    onSync('locations', locations);
+    
+    // மாற்றம்: புதிய லிஸ்ட்டை உருவாக்கிவிட்டு அனுப்புங்கள்
+    const updatedLocations = [...locations, ...newLocs];
+    setLocations(updatedLocations);
+    onSync('locations', updatedLocations); // பழைய 'locations' அனுப்பக்கூடாது
   };
 
   return (
